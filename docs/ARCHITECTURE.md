@@ -12,6 +12,11 @@ Private cloud album: phone keeps recent originals locally; older photos archive 
 - EXIF preserved on upload.
 - Multi-device login under one account.
 
+### Device switch
+
+New phone: reinstall app, sign in to the same account → timeline loads from the NAS (local storage is only a cache). Photos still queued on the old phone must finish uploading before the switch, or they are lost.
+
+
 ## 2. API (`server`, Go)
 
 NAS-side control plane.
