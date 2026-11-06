@@ -16,6 +16,14 @@ Private cloud album: phone keeps recent originals locally; older photos archive 
 
 New phone: reinstall app, sign in to the same account → timeline loads from the NAS (local storage is only a cache). Photos still queued on the old phone must finish uploading before the switch, or they are lost.
 
+### Settings
+
+Phone settings only (no admin UI; admin comes later as Web):
+
+- Rolling-archive retention: user picks e.g. 3 / 6 / 12 months; older originals upload to NAS then leave the phone.
+- Storage status: local free space, NAS used, upload queue.
+- Safety tier: casual / important → different SeaweedFS collections (replica count).
+- Account & devices: list signed-in devices; remove a device.
 
 ## 2. API (`server`, Go)
 
