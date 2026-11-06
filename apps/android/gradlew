@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+# Prefer opening the project in Android Studio (File → Open apps/android).
+# To use CLI: install Android SDK + run `gradle wrapper` once, or copy a standard Gradle wrapper jar.
+DIR="$(cd "$(dirname "$0")" && pwd)"
+if [ -f "$DIR/gradle/wrapper/gradle-wrapper.jar" ]; then
+  exec java -jar "$DIR/gradle/wrapper/gradle-wrapper.jar" "$@"
+fi
+echo "gradle-wrapper.jar missing. Open apps/android in Android Studio, or run: gradle wrapper" >&2
+exit 1

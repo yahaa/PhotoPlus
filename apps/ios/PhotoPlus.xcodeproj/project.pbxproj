@@ -1,0 +1,380 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		56F52647A7EF44D7B79A818E /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F59265BCC4C47A1AF089756 /* ContentView.swift */; };
+		09EB1FAE0D794FC0885CA068 /* ApiClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30995D39BB5449BD88215A02 /* ApiClient.swift */; };
+		91A08F09890749DCB9EABC85 /* PhotoKitStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFF6E2154D47459F91018FAA /* PhotoKitStore.swift */; };
+		748A1A3B12DD419481722F2D /* PhotoItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18A7A62141C543F9AA852803 /* PhotoItem.swift */; };
+		31472BFC508C44D584AFD9FA /* SafetyTier.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4B7E89312374C789C4FF3A9 /* SafetyTier.swift */; };
+		3F923D24A51942FF8EC6D27B /* PhotoRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A643DEB6974E31A24EF0E7 /* PhotoRepository.swift */; };
+		CF2D126A53E847279ADB499C /* PhotoPlusApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77E2B7008A174F9096D9E086 /* PhotoPlusApp.swift */; };
+		2222B4BE35E14CF6868420BF /* DevicesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0188721A50E4C58B6CF0BF5 /* DevicesView.swift */; };
+		84A1FF890DD046BCBE0F1A47 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39B3607EC6640CD95027A79 /* SettingsView.swift */; };
+		F6BA9432A41F4BC68E17438C /* TimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9A4B5321F9543A59A829CA2 /* TimelineView.swift */; };
+		AB22D21B07784A02817CAB24 /* UploadQueueView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6E55977C6234F169CB1F390 /* UploadQueueView.swift */; };
+		3E175439818C427BA273BB39 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D88B2AFE3DA24061B4485598 /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		B15A031ACBCF48A28056777E /* PhotoPlus.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PhotoPlus.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4F59265BCC4C47A1AF089756 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		30995D39BB5449BD88215A02 /* ApiClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiClient.swift; sourceTree = "<group>"; };
+		EFF6E2154D47459F91018FAA /* PhotoKitStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoKitStore.swift; sourceTree = "<group>"; };
+		18A7A62141C543F9AA852803 /* PhotoItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoItem.swift; sourceTree = "<group>"; };
+		C4B7E89312374C789C4FF3A9 /* SafetyTier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafetyTier.swift; sourceTree = "<group>"; };
+		E1A643DEB6974E31A24EF0E7 /* PhotoRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoRepository.swift; sourceTree = "<group>"; };
+		77E2B7008A174F9096D9E086 /* PhotoPlusApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoPlusApp.swift; sourceTree = "<group>"; };
+		F0188721A50E4C58B6CF0BF5 /* DevicesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevicesView.swift; sourceTree = "<group>"; };
+		B39B3607EC6640CD95027A79 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		C9A4B5321F9543A59A829CA2 /* TimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineView.swift; sourceTree = "<group>"; };
+		B6E55977C6234F169CB1F390 /* UploadQueueView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadQueueView.swift; sourceTree = "<group>"; };
+		388D6CFB2296475ABB215E6C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		D88B2AFE3DA24061B4485598 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		46150D10380A4F0DBBA24CBF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		58467CAC299641E8B805F997 /* PhotoPlus */ = {
+			isa = PBXGroup;
+			children = (
+				0CEAC33DA8864913B0946E88 /* Data */,
+				11A345FCD8CF40B7A11B6F23 /* Domain */,
+				97DC71D57B484EE89D650FD6 /* UI */,
+				4F59265BCC4C47A1AF089756 /* ContentView.swift */,
+				77E2B7008A174F9096D9E086 /* PhotoPlusApp.swift */,
+				388D6CFB2296475ABB215E6C /* Info.plist */,
+				D88B2AFE3DA24061B4485598 /* Assets.xcassets */,
+			);
+			path = PhotoPlus;
+			sourceTree = "<group>";
+		};
+		0CEAC33DA8864913B0946E88 /* Data */ = {
+			isa = PBXGroup;
+			children = (
+				664C45FD42234C3B9E73610A /* API */,
+				C94EF452CF384CAD80A25014 /* Local */,
+			);
+			path = Data;
+			sourceTree = "<group>";
+		};
+		664C45FD42234C3B9E73610A /* API */ = {
+			isa = PBXGroup;
+			children = (
+				30995D39BB5449BD88215A02 /* ApiClient.swift */,
+			);
+			path = API;
+			sourceTree = "<group>";
+		};
+		C94EF452CF384CAD80A25014 /* Local */ = {
+			isa = PBXGroup;
+			children = (
+				EFF6E2154D47459F91018FAA /* PhotoKitStore.swift */,
+			);
+			path = Local;
+			sourceTree = "<group>";
+		};
+		11A345FCD8CF40B7A11B6F23 /* Domain */ = {
+			isa = PBXGroup;
+			children = (
+				A9F3EECAC69B4DCC86EAF563 /* Model */,
+				FED2DD0102AB477E9B311741 /* Repository */,
+			);
+			path = Domain;
+			sourceTree = "<group>";
+		};
+		A9F3EECAC69B4DCC86EAF563 /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				18A7A62141C543F9AA852803 /* PhotoItem.swift */,
+				C4B7E89312374C789C4FF3A9 /* SafetyTier.swift */,
+			);
+			path = Model;
+			sourceTree = "<group>";
+		};
+		FED2DD0102AB477E9B311741 /* Repository */ = {
+			isa = PBXGroup;
+			children = (
+				E1A643DEB6974E31A24EF0E7 /* PhotoRepository.swift */,
+			);
+			path = Repository;
+			sourceTree = "<group>";
+		};
+		97DC71D57B484EE89D650FD6 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				222A259B6C014F13854BFE97 /* Devices */,
+				0497D5A64FCC427AAA6D6B5A /* Settings */,
+				7CFCCFC7A0BB431CBA3562F4 /* Timeline */,
+				E76F239E60994786AC0F3FFA /* Upload */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		222A259B6C014F13854BFE97 /* Devices */ = {
+			isa = PBXGroup;
+			children = (
+				F0188721A50E4C58B6CF0BF5 /* DevicesView.swift */,
+			);
+			path = Devices;
+			sourceTree = "<group>";
+		};
+		0497D5A64FCC427AAA6D6B5A /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				B39B3607EC6640CD95027A79 /* SettingsView.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		7CFCCFC7A0BB431CBA3562F4 /* Timeline */ = {
+			isa = PBXGroup;
+			children = (
+				C9A4B5321F9543A59A829CA2 /* TimelineView.swift */,
+			);
+			path = Timeline;
+			sourceTree = "<group>";
+		};
+		E76F239E60994786AC0F3FFA /* Upload */ = {
+			isa = PBXGroup;
+			children = (
+				B6E55977C6234F169CB1F390 /* UploadQueueView.swift */,
+			);
+			path = Upload;
+			sourceTree = "<group>";
+		};
+		D550AE75F0A14B31A06118A2 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				B15A031ACBCF48A28056777E /* PhotoPlus.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		9A6A22F4291940B3B1FCD63C /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		18426419000A4FEAA40637DD = {
+			isa = PBXGroup;
+			children = (
+				58467CAC299641E8B805F997 /* PhotoPlus */,
+				D550AE75F0A14B31A06118A2 /* Products */,
+				9A6A22F4291940B3B1FCD63C /* Frameworks */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		372B251FB6CA437EAFD713C8 /* PhotoPlus */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DF2C89C9CAB146859DEDC5C3 /* Build configuration list for PBXNativeTarget "PhotoPlus" */;
+			buildPhases = (
+				F4CE1229DA2A4A08BBE47194 /* Sources */,
+				46150D10380A4F0DBBA24CBF /* Frameworks */,
+				73976EB43E0148C7ACBC457F /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = PhotoPlus;
+			productName = PhotoPlus;
+			productReference = B15A031ACBCF48A28056777E /* PhotoPlus.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		AB3D187D97E844548E2668E3 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					372B251FB6CA437EAFD713C8 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+				};
+			};
+			buildConfigurationList = A87B00C35FA64116A234F8B7 /* Build configuration list for PBXProject "PhotoPlus" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 18426419000A4FEAA40637DD;
+			productRefGroup = D550AE75F0A14B31A06118A2 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				372B251FB6CA437EAFD713C8 /* PhotoPlus */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		73976EB43E0148C7ACBC457F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3E175439818C427BA273BB39 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		F4CE1229DA2A4A08BBE47194 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				56F52647A7EF44D7B79A818E /* ContentView.swift in Sources */,
+				09EB1FAE0D794FC0885CA068 /* ApiClient.swift in Sources */,
+				91A08F09890749DCB9EABC85 /* PhotoKitStore.swift in Sources */,
+				748A1A3B12DD419481722F2D /* PhotoItem.swift in Sources */,
+				31472BFC508C44D584AFD9FA /* SafetyTier.swift in Sources */,
+				3F923D24A51942FF8EC6D27B /* PhotoRepository.swift in Sources */,
+				CF2D126A53E847279ADB499C /* PhotoPlusApp.swift in Sources */,
+				2222B4BE35E14CF6868420BF /* DevicesView.swift in Sources */,
+				84A1FF890DD046BCBE0F1A47 /* SettingsView.swift in Sources */,
+				F6BA9432A41F4BC68E17438C /* TimelineView.swift in Sources */,
+				AB22D21B07784A02817CAB24 /* UploadQueueView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		9D2034CC6D4B46D5908E3CCF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				SDKROOT = iphoneos;
+			};
+			name = Debug;
+		};
+		F8153B0FD28D43B19E95C8A5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				SDKROOT = iphoneos;
+			};
+			name = Release;
+		};
+		CCB1B17F937E492992B5127E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = PhotoPlus/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yahaa.photoplus;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		796E2605AD774F069A584269 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = PhotoPlus/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yahaa.photoplus;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A87B00C35FA64116A234F8B7 /* Build configuration list for PBXProject "PhotoPlus" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9D2034CC6D4B46D5908E3CCF /* Debug */,
+				F8153B0FD28D43B19E95C8A5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		DF2C89C9CAB146859DEDC5C3 /* Build configuration list for PBXNativeTarget "PhotoPlus" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CCB1B17F937E492992B5127E /* Debug */,
+				796E2605AD774F069A584269 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = AB3D187D97E844548E2668E3 /* Project object */;
+}

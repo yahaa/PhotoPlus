@@ -6,7 +6,8 @@ Monorepo layout:
 
 | Path | Role |
 |------|------|
-| `apps/flutter` | Flutter client (iOS + Android) |
+| `apps/android` | Kotlin + Jetpack Compose client (Android) |
+| `apps/ios` | Swift + SwiftUI client (iOS) |
 | `server` | Go API on the NAS |
 | `storage` | SeaweedFS deploy configs & scripts |
 | `deploy` | Factory provisioning & install |

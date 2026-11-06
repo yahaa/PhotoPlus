@@ -2,9 +2,9 @@
 
 Private cloud album: phone keeps recent originals locally; older photos archive to home NAS. Clients talk to a Go API on the box; objects live in SeaweedFS; devices reach each other via Headscale (Tailscale control plane).
 
-## 1. Client (`apps/flutter`)
+## 1. Client (`apps/ios` + `apps/android`)
 
-- One Flutter codebase for iOS and Android.
+- Dual native clients: **Swift + SwiftUI** on iOS (`apps/ios`) and **Kotlin + Jetpack Compose** on Android (`apps/android`). Intentional dual codebase for deep Photos (PhotoKit) / MediaStore integration rather than a shared Flutter UI.
 - UI mirrors the iOS Photos app: timeline, albums, search.
 - Rolling archive: user sets a retention window (e.g. 6 months); older originals upload to NAS, then leave the phone.
 - Local placeholders: PhotoKit / MediaStore thumbnail + metadata stay; open a photo → fetch original from NAS.

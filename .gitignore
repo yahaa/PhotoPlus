@@ -1,17 +1,19 @@
-# Flutter
-apps/flutter/.dart_tool/
-apps/flutter/.packages
-apps/flutter/.flutter-plugins
-apps/flutter/.flutter-plugins-dependencies
-apps/flutter/build/
-apps/flutter/.pub-cache/
-apps/flutter/.pub/
-apps/flutter/ios/Pods/
-apps/flutter/ios/.symlinks/
-apps/flutter/android/.gradle/
-apps/flutter/android/local.properties
-apps/flutter/**/*.iml
-apps/flutter/.idea/
+# Android
+apps/android/.gradle/
+apps/android/local.properties
+apps/android/**/build/
+apps/android/.idea/
+apps/android/*.iml
+apps/android/captures/
+apps/android/.cxx/
+
+# iOS / Xcode
+apps/ios/build/
+apps/ios/DerivedData/
+apps/ios/**/xcuserdata/
+apps/ios/**/*.xcuserstate
+apps/ios/.swiftpm/
+apps/ios/.build/
 
 # Go
 server/bin/
@@ -23,5 +25,7 @@ storage/data/volume/**
 storage/data/filer/**
 !storage/data/**/.gitkeep
 
-# OS
+# OS / IDE
 .DS_Store
+.idea/
+*.iml
