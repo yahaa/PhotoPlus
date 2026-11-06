@@ -1,0 +1,27 @@
+# Flutter
+apps/flutter/.dart_tool/
+apps/flutter/.packages
+apps/flutter/.flutter-plugins
+apps/flutter/.flutter-plugins-dependencies
+apps/flutter/build/
+apps/flutter/.pub-cache/
+apps/flutter/.pub/
+apps/flutter/ios/Pods/
+apps/flutter/ios/.symlinks/
+apps/flutter/android/.gradle/
+apps/flutter/android/local.properties
+apps/flutter/**/*.iml
+apps/flutter/.idea/
+
+# Go
+server/bin/
+*.exe
+
+# SeaweedFS local data
+storage/data/master/**
+storage/data/volume/**
+storage/data/filer/**
+!storage/data/**/.gitkeep
+
+# OS
+.DS_Store

@@ -1,0 +1,1 @@
+-- TODO: users, devices, photos, albums, permissions tables

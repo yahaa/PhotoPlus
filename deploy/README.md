@@ -1,3 +1,3 @@
 # deploy
 
-Placeholder. Implementation TBD.
+Factory provisioning for PhotoPlus NAS hardware (install + QR pairing).
