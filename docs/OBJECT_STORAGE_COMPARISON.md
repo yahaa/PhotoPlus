@@ -8,8 +8,8 @@ Scope: single-node NAS, 1–8 disks, photo/video blobs, commercial closed-source
 - Fits single-node multi-disk: one volume server per disk, or `weed mini`.
 - Strong small-file write path (~431 ops/s sequential small uploads in a public r/selfhosted benchmark vs ~113 MinIO / ~376 Garage).
 - Production mentions: ~100TB image load on 2× HDD; >100TB backup migration off MinIO.
-- Default durability path includes erasure coding (we target 3 data + 2 parity).
-- Drawbacks: docs are hard; maintainer concentration on chrislusf (low bus factor); **filer metadata must be backed up** or the index is gone.
+- Durability: volume replication for hot data; open-source warm EC is fixed **RS(10+4)** (custom ratios = Enterprise). See [EC wiki](https://github.com/seaweedfs/seaweedfs/wiki/Erasure-coding-for-warm-storage).
+- Drawbacks: docs are hard; maintainer concentration on chrislusf (low bus factor); **filer metadata must be backed up** or the index is gone; 10+4 on a small bay count needs careful shard-per-disk placement.
 
 ## 2. Runner-up: RustFS
 

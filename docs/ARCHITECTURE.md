@@ -42,8 +42,9 @@ NAS-side control plane.
 
 - Single-node distributed mode: master + volume + filer.
 - One volume server per disk; add bays as needed (no hard disk-count cap).
-- Default EC: 3 data + 2 parity.
-- Multiple collections for per-object replica / durability policy.
+- Hot data uses volume-level replication (placement codes like `001`/`002`); collections separate tiers (e.g. important vs casual), not per-object instant RF.
+- Open-source EC for warm/sealed volumes is fixed RS(10+4); custom EC ratios are Enterprise-only. Shard placement must be disk-aware on a 1–8 bay box.
+- **Back up filer metadata separately** — volume disks alone do not restore the object index.
 - Disk lifecycle inspired by `yahaa/storage-plus`: plug → upsert mount; unplug → umount; `blkid` UUID as stable id.
 
 ## 4. Network (Headscale)
@@ -62,5 +63,7 @@ NAS-side control plane.
 ## Risks to validate
 
 - iOS / Android background upload and media-library permission limits (PhotoKit background, MediaStore scoped storage, OEM killers).
-- Changing SeaweedFS RF / collection policy may require object migration, not an instant rewrite.
+- Changing SeaweedFS RF / collection policy needs `volume.fix.replication` (or equivalent) migration, not an instant rewrite.
+- Open-source 10+4 EC on ≤8 disks: verify shard-per-disk caps so two-disk loss stays within 4 parity shards.
+- Filer metadata backup and restore drill.
 - Headscale multi-tenant scale (users, nodes, coordination latency) under real customer load.
