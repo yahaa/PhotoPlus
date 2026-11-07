@@ -39,6 +39,7 @@ struct PhotoGridView: View {
     @State private var fillsScreen = false
     @State private var isSearching = false
     @State private var query = ""
+    @State private var hasOpenedAtNewest = false
     @Namespace private var zoom
 
     private var items: [PhotoItem] {
@@ -66,6 +67,20 @@ struct PhotoGridView: View {
                     guard isLibrary, let last = items.last else { return }
                     withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
                 }
+                .onChange(of: items.isEmpty, initial: true) { _, isEmpty in
+                    // Photos usually arrive after the first layout, which the initial-offset anchor doesn't always survive.
+                    guard !isEmpty, !hasOpenedAtNewest, scrollTarget == nil else { return }
+                    hasOpenedAtNewest = true
+                    DispatchQueue.main.async {
+                        if let last = items.last { proxy.scrollTo(last.id, anchor: .bottom) }
+                    }
+                }
+                .onChange(of: filter) { _, _ in
+                    // The old offset means nothing in a different set of photos.
+                    DispatchQueue.main.async {
+                        if let last = items.last { proxy.scrollTo(last.id, anchor: .bottom) }
+                    }
+                }
                 .onChange(of: viewerCurrentID) { _, id in
                     // The zoom back needs its cell on screen, and the grid should end up where the viewer did.
                     guard let id, !tracker.visibleIDs.contains(id) else { return }
@@ -80,7 +95,12 @@ struct PhotoGridView: View {
                     .allowsHitTesting(false)
             }
         }
-        .overlay(alignment: .topLeading) { if isLibrary { libraryHeader } }
+        .overlay(alignment: .topLeading) {
+            if isLibrary {
+                let summary = PhotoFormat.summary(items)
+                LibraryHeader(title: title, subtitle: isAtNewest ? summary : visibleDay ?? summary, isOnPhotos: fillsScreen)
+            }
+        }
         .overlay { emptyState }
         .overlay(alignment: .bottom) { bottomControls }
         .navigationTitle(style == .album && !items.isEmpty ? title : "")
@@ -190,27 +210,6 @@ struct PhotoGridView: View {
     }
 
     // MARK: Header
-
-    private var subtitle: String {
-        if isAtNewest || visibleDay == nil { return PhotoFormat.summary(items) }
-        return visibleDay ?? ""
-    }
-
-    private var libraryHeader: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text(title).font(.largeTitle.bold())
-            Text(subtitle)
-                .font(.subheadline.weight(.semibold))
-                .contentTransition(.numericText())
-                .accessibilityIdentifier("library-subtitle")
-        }
-        .foregroundStyle(fillsScreen ? AnyShapeStyle(.white) : AnyShapeStyle(.primary))
-        .padding(.horizontal, 16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        // The navigation bar is transparent, so the title shares a line with its buttons.
-        .padding(.top, -54)
-        .allowsHitTesting(false)
-    }
 
     @ViewBuilder private var emptyState: some View {
         if items.isEmpty, store.hasLoaded, !isLoading {

@@ -188,6 +188,7 @@ struct GridTopControls<MoreMenu: View>: View {
                 Button(action: onSelect) {
                     Text("选择")
                         .font(.subheadline.weight(.medium))
+                        .fixedSize()
                         .padding(.horizontal, 16)
                         .frame(height: 44)
                         .contentShape(Capsule())
@@ -290,6 +291,29 @@ struct EmptyAlbumHero: View {
             Spacer()
         }
         .accessibilityIdentifier("empty-album")
+    }
+}
+
+/// The Library's title and its line of context, white over the darkened photos when there are any under it.
+struct LibraryHeader: View {
+    let title: String
+    let subtitle: String
+    let isOnPhotos: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(title).font(.largeTitle.bold())
+            Text(subtitle)
+                .font(.subheadline.weight(.semibold))
+                .contentTransition(.numericText())
+                .accessibilityIdentifier("library-subtitle")
+        }
+        .foregroundStyle(isOnPhotos ? AnyShapeStyle(.white) : AnyShapeStyle(.primary))
+        .padding(.horizontal, 16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        // The navigation bar is transparent, so the title shares a line with its buttons.
+        .padding(.top, -54)
+        .allowsHitTesting(false)
     }
 }
 

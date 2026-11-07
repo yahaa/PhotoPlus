@@ -5,10 +5,10 @@ import XCTest
 /// write screenshots to the host disk, but a device still checks the assertions, and removes the fixture album after.
 /// Never set TEST_RUNNER_PHOTOPLUS_TOUR_UNCONFINED on a device: it would read and upload that device's real photos.
 final class ScreenshotTourUITests: XCTestCase {
-    private var directory = ""
-    private lazy var app = XCUIApplication()
+    var directory = ""
+    lazy var app = XCUIApplication()
 
-    private func any(_ identifier: String) -> XCUIElement {
+    func any(_ identifier: String) -> XCUIElement {
         app.descendants(matching: .any)[identifier]
     }
 
@@ -25,8 +25,7 @@ final class ScreenshotTourUITests: XCTestCase {
         app.launchEnvironment["PHOTOPLUS_SERVER_URL"] = env["PHOTOPLUS_SERVER_URL"]
         app.launchEnvironment["PHOTOPLUS_TOKEN"] = env["PHOTOPLUS_TOKEN"]
         app.launch()
-        let allow = XCUIApplication(bundleIdentifier: "com.apple.springboard").alerts.buttons["允许完全访问"]
-        if allow.waitForExistence(timeout: 6) { allow.tap() }
+        answerFirstRunPrompts()
         XCTAssertTrue(app.buttons["cell-local"].firstMatch.waitForExistence(timeout: 30))
 
         libraryAndTimeline()
@@ -68,10 +67,24 @@ final class ScreenshotTourUITests: XCTestCase {
         pause(3)
     }
 
+    /// A device seeing the app for the first time asks about photos, the local network and, in China, wireless data.
+    private func answerFirstRunPrompts() {
+        let labels = ["允许完全访问", "允许访问所有照片", "Allow Full Access", "无线局域网与蜂窝网络", "允许", "Allow"]
+        let alert = XCUIApplication(bundleIdentifier: "com.apple.springboard").alerts.firstMatch
+        var deadline = Date().addingTimeInterval(8)
+        while Date() < deadline {
+            if alert.exists, let label = labels.first(where: { alert.buttons[$0].exists }) {
+                alert.buttons[label].tap()
+                deadline = Date().addingTimeInterval(5)
+            }
+            pause(0.25)
+        }
+    }
+
     private func libraryAndTimeline() {
         pause(2)
         save("10-root")
-        XCTAssertTrue(app.buttons["tab-library"].exists, "tabs show at the newest photo")
+        XCTAssertTrue(app.buttons["tab-library"].exists, "the library opens at the newest photo, with tabs showing")
         XCTAssertFalse(app.buttons["mode-all"].exists, "the mode picker is hidden at the newest photo")
         XCTAssertFalse(app.staticTexts["grid-footer"].exists)
 
@@ -122,16 +135,32 @@ final class ScreenshotTourUITests: XCTestCase {
         pause(1.5)
         XCTAssertTrue(app.buttons["cell-local"].firstMatch.waitForExistence(timeout: 3), "removing the filter brings the photos back")
 
+        selection()
+    }
+
+    private func selection() {
         let cell = app.buttons["cell-local"].firstMatch
         let last = app.buttons.matching(identifier: "cell-local").element(boundBy: app.buttons.matching(identifier: "cell-local").count - 1)
         last.press(forDuration: 1.2)
         pause(1)
         save("22-longpress")
+        #if targetEnvironment(simulator)
         app.buttons["拷贝"].firstMatch.tap()
         pause(1)
+        #else
+        // A device's clipboard belongs to its owner.
+        closeMenu()
+        pause(2)
+        #endif
 
-        app.buttons["select-button"].firstMatch.tap()
+        let select = app.buttons["select-button"].firstMatch
+        select.tap()
         pause(1)
+        // iOS 27 swallows the first tap after a context menu closes by tapping away. Unexplained, and not on iOS 26.
+        if !app.buttons["selection-close"].exists {
+            select.tap()
+            pause(1)
+        }
         save("23-select-empty")
         XCTAssertFalse(app.buttons["tab-library"].exists, "the selection bar replaces the tabs")
         XCTAssertFalse(app.buttons["selection-delete"].isEnabled)
@@ -150,7 +179,10 @@ final class ScreenshotTourUITests: XCTestCase {
         XCTAssertTrue(cell.exists)
     }
 
-    private func viewer() {
+}
+
+private extension ScreenshotTourUITests {
+    func viewer() {
         let cells = app.buttons.matching(identifier: "cell-local")
         cells.element(boundBy: cells.count - 2).tap()
         XCTAssertTrue(any("viewer-back").waitForExistence(timeout: 5))
@@ -185,7 +217,7 @@ final class ScreenshotTourUITests: XCTestCase {
         viewerMenuAndInfo()
     }
 
-    private func viewerMenuAndInfo() {
+    func viewerMenuAndInfo() {
         any("viewer-more").firstMatch.tap()
         pause(1)
         save("35-viewer-more")
@@ -217,7 +249,7 @@ final class ScreenshotTourUITests: XCTestCase {
         XCTAssertTrue(app.buttons["select-button"].firstMatch.exists)
     }
 
-    private func collectionsAndSearch() {
+    func collectionsAndSearch() {
         app.buttons["tab-collections"].tap()
         pause(2)
         save("50-collections")
@@ -248,22 +280,28 @@ final class ScreenshotTourUITests: XCTestCase {
     }
 
     /// Taps away from a menu, which sit at the trailing edge.
-    private func closeMenu() {
+    func closeMenu() {
         app.coordinate(withNormalizedOffset: CGVector(dx: 0.08, dy: 0.7)).tap()
         pause(1)
     }
 
-    private func drag(from start: CGFloat, to end: CGFloat) {
+    func drag(from start: CGFloat, to end: CGFloat) {
         let origin = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: start))
         origin.press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: end)))
     }
 
-    private func pause(_ seconds: TimeInterval) {
+    func pause(_ seconds: TimeInterval) {
         RunLoop.current.run(until: Date().addingTimeInterval(seconds))
     }
 
-    private func save(_ name: String) {
+    func save(_ name: String) {
+        let screenshot = app.screenshot()
         let url = URL(fileURLWithPath: directory).appendingPathComponent(name + ".png")
-        try? app.screenshot().pngRepresentation.write(to: url)
+        try? screenshot.pngRepresentation.write(to: url)
+        // A device can't write to the host's disk, so its screenshots come out of the result bundle.
+        let attachment = XCTAttachment(screenshot: screenshot)
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
     }
 }
