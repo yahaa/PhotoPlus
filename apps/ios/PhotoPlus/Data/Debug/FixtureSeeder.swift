@@ -12,6 +12,9 @@ enum FixtureSeeder {
 
     static func seedIfRequested(photoKit: PhotoKitStore) async {
         guard let title = photoKit.fixtureAlbumTitle else { return }
+        // Fixtures render the same bytes every run, so their hashes repeat. A cached original would let
+        // a test pass without the NAS ever being asked for it.
+        ImageCache.shared.trimOriginals(limit: 0)
         if environment["PHOTOPLUS_FIXTURE_CLEANUP"] == "1" {
             await cleanup(title: title, photoKit: photoKit)
             return

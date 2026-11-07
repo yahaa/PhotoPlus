@@ -30,6 +30,8 @@ struct SettingsView: View {
                 Button("取消", role: .cancel) {}
             }
             .refreshable { await store.reload() }
+            .contentMargins(.bottom, BottomBarMetrics.height, for: .scrollContent)
+            .edgeFade(.bottom, color: Color(.systemGroupedBackground), height: 100)
         }
     }
 
@@ -131,7 +133,8 @@ struct SettingsView: View {
 
     private var nasStateText: String {
         switch store.nasState {
-        case .notConfigured: "未配置"
+        case .notConfigured: settings.apiClient == nil ? "未配置" : "未连接"
+        case .connecting: "正在连接…"
         case .connected: "已连接"
         case .unreachable: "无法连接"
         }
@@ -155,6 +158,7 @@ struct SettingsView: View {
                 await store.reload()
             } catch {
                 connectionMessage = "连接失败：\(error.localizedDescription)"
+                await store.refreshRemote()
             }
         }
     }

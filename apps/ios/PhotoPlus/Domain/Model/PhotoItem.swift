@@ -16,6 +16,7 @@ struct LocalAsset: Hashable {
     let height: Int
     let isFavorite: Bool
     let isBurst: Bool
+    var isScreenshot = false
 }
 
 /// A photo committed on the NAS. Mirrors the server's JSON.
@@ -49,6 +50,7 @@ struct PhotoItem: Identifiable, Hashable {
     let height: Int
     let isFavorite: Bool
     let isBurst: Bool
+    var isScreenshot = false
     let localAssetID: String?
     let remote: RemotePhoto?
 

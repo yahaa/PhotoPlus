@@ -1,7 +1,5 @@
-import CryptoKit
 import Photos
 import UIKit
-import UniformTypeIdentifiers
 
 /// A smart album or user album shown in Collections.
 struct AlbumSummary: Identifiable, Hashable {
@@ -13,23 +11,12 @@ struct AlbumSummary: Identifiable, Hashable {
     let isUserAlbum: Bool
 }
 
-/// The resources of one asset, exported to temporary files for upload.
-struct ExportedOriginal {
-    let file: URL
-    let sha256: String
-    let filename: String
-    let contentType: String
-    let motionFile: URL?
-    let motionSHA256: String?
-    let motionSize: Int64
-    let directory: URL
-}
-
 enum PhotoKitError: LocalizedError {
     case noPhotoResource
     case edited
     case assetGone
     case thumbnailFailed
+    case confinedToFixture
 
     var errorDescription: String? {
         switch self {
@@ -37,6 +24,7 @@ enum PhotoKitError: LocalizedError {
         case .edited: "已编辑的照片暂不归档"
         case .assetGone: "照片已不在图库中"
         case .thumbnailFailed: "无法生成缩略图"
+        case .confinedToFixture: "测试模式下不可用"
         }
     }
 }
@@ -169,7 +157,8 @@ final class PhotoKitStore: @unchecked Sendable {
             width: asset.pixelWidth,
             height: asset.pixelHeight,
             isFavorite: asset.isFavorite,
-            isBurst: asset.representsBurst
+            isBurst: asset.representsBurst,
+            isScreenshot: asset.mediaSubtypes.contains(.photoScreenshot)
         )
     }
 
@@ -184,96 +173,75 @@ final class PhotoKitStore: @unchecked Sendable {
         }
     }
 
-    func setFavorite(_ isFavorite: Bool, assetID: String) async throws {
-        guard let asset = asset(id: assetID) else { throw PhotoKitError.assetGone }
+    func setFavorite(_ isFavorite: Bool, assetIDs: [String]) async throws {
+        let assets = PHAsset.fetchAssets(withLocalIdentifiers: assetIDs, options: nil)
         try await PHPhotoLibrary.shared().performChanges {
-            PHAssetChangeRequest(for: asset).isFavorite = isFavorite
-        }
-    }
-
-    // MARK: Export
-
-    /// Copies the untouched original (EXIF intact), plus a Live Photo's paired video, to a temp directory.
-    func exportOriginal(assetID: String) async throws -> ExportedOriginal {
-        guard let asset = asset(id: assetID) else { throw PhotoKitError.assetGone }
-        let resources = PHAssetResource.assetResources(for: asset)
-        // Edits only exist on the phone; uploading the base photo and removing the local copy would lose them.
-        guard !resources.contains(where: { $0.type == .fullSizePhoto || $0.type == .adjustmentData }) else {
-            throw PhotoKitError.edited
-        }
-        guard let photo = resources.first(where: { $0.type == .photo }) else { throw PhotoKitError.noPhotoResource }
-
-        let directory = FileManager.default.temporaryDirectory.appending(path: "export-\(UUID().uuidString)", directoryHint: .isDirectory)
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        do {
-            let file = directory.appending(path: "original")
-            try await write(photo, to: file)
-            var motionFile: URL?
-            var motionSHA: String?
-            var motionSize: Int64 = 0
-            if let paired = resources.first(where: { $0.type == .pairedVideo }) {
-                let target = directory.appending(path: "motion")
-                try await write(paired, to: target)
-                motionFile = target
-                motionSHA = try Self.sha256(of: target)
-                motionSize = try Self.size(of: target)
+            assets.enumerateObjects { asset, _, _ in
+                PHAssetChangeRequest(for: asset).isFavorite = isFavorite
             }
-            return ExportedOriginal(
-                file: file,
-                sha256: try Self.sha256(of: file),
-                filename: photo.originalFilename,
-                contentType: UTType(photo.uniformTypeIdentifier)?.preferredMIMEType ?? "application/octet-stream",
-                motionFile: motionFile,
-                motionSHA256: motionSHA,
-                motionSize: motionSize,
-                directory: directory
-            )
-        } catch {
-            try? FileManager.default.removeItem(at: directory)
-            throw error
         }
     }
 
-    /// JPEG thumbnail stored on the NAS, so the timeline survives the asset leaving the phone.
-    func makeThumbnailJPEG(assetID: String) async throws -> Data {
+    func hide(assetIDs: [String]) async throws {
+        let assets = PHAsset.fetchAssets(withLocalIdentifiers: assetIDs, options: nil)
+        try await PHPhotoLibrary.shared().performChanges {
+            assets.enumerateObjects { asset, _, _ in
+                PHAssetChangeRequest(for: asset).isHidden = true
+            }
+        }
+    }
+
+    /// Adds a second copy of a photo, keeping its bytes and capture date.
+    func duplicate(assetID: String) async throws {
+        guard fixtureAlbumTitle == nil else { throw PhotoKitError.confinedToFixture }
+        guard let asset = asset(id: assetID) else { throw PhotoKitError.assetGone }
+        let data = try await imageData(assetID: assetID)
+        try await PHPhotoLibrary.shared().performChanges {
+            let request = PHAssetCreationRequest.forAsset()
+            request.addResource(with: .photo, data: data, options: nil)
+            request.creationDate = asset.creationDate
+            request.location = asset.location
+        }
+    }
+
+    func addAssets(_ assetIDs: [String], toAlbum albumID: String) async throws {
+        guard fixtureAlbumTitle == nil else { throw PhotoKitError.confinedToFixture }
+        let assets = PHAsset.fetchAssets(withLocalIdentifiers: assetIDs, options: nil)
+        guard let album = PHAssetCollection.fetchAssetCollections(withLocalIdentifiers: [albumID], options: nil).firstObject else {
+            throw PhotoKitError.assetGone
+        }
+        try await PHPhotoLibrary.shared().performChanges {
+            PHAssetCollectionChangeRequest(for: album)?.addAssets(assets)
+        }
+    }
+
+    func createAlbum(title: String) async throws {
+        guard fixtureAlbumTitle == nil else { throw PhotoKitError.confinedToFixture }
+        try await PHPhotoLibrary.shared().performChanges {
+            PHAssetCollectionChangeRequest.creationRequestForAssetCollection(withTitle: title)
+        }
+    }
+
+    /// The current rendition's bytes, for copying and for reading EXIF.
+    func imageData(assetID: String) async throws -> Data {
         guard let asset = asset(id: assetID) else { throw PhotoKitError.assetGone }
         let options = PHImageRequestOptions()
-        options.deliveryMode = .highQualityFormat
-        options.resizeMode = .exact
         options.isNetworkAccessAllowed = true
-        options.isSynchronous = false
-        let image: UIImage? = await withCheckedContinuation { continuation in
-            PHImageManager.default().requestImage(
-                for: asset,
-                targetSize: CGSize(width: 512, height: 512),
-                contentMode: .aspectFit,
-                options: options
-            ) { image, _ in
-                continuation.resume(returning: image)
+        options.deliveryMode = .highQualityFormat
+        options.version = .current
+        return try await withCheckedThrowingContinuation { continuation in
+            PHImageManager.default().requestImageDataAndOrientation(for: asset, options: options) { data, _, _, info in
+                if let data {
+                    continuation.resume(returning: data)
+                } else {
+                    continuation.resume(throwing: info?[PHImageErrorKey] as? Error ?? PhotoKitError.noPhotoResource)
+                }
             }
         }
-        guard let data = image?.jpegData(compressionQuality: 0.75) else { throw PhotoKitError.thumbnailFailed }
-        return data
     }
 
-    private func write(_ resource: PHAssetResource, to url: URL) async throws {
-        let options = PHAssetResourceRequestOptions()
-        options.isNetworkAccessAllowed = true
-        try await PHAssetResourceManager.default().writeData(for: resource, toFile: url, options: options)
-    }
-
-    static func sha256(of url: URL) throws -> String {
-        let handle = try FileHandle(forReadingFrom: url)
-        defer { try? handle.close() }
-        var hasher = SHA256()
-        while let chunk = try handle.read(upToCount: 1 << 20), !chunk.isEmpty {
-            hasher.update(data: chunk)
-        }
-        return hasher.finalize().map { String(format: "%02x", $0) }.joined()
-    }
-
-    private static func size(of url: URL) throws -> Int64 {
-        let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
-        return (attributes[.size] as? NSNumber)?.int64Value ?? 0
+    func originalFilename(assetID: String) -> String? {
+        guard let asset = asset(id: assetID) else { return nil }
+        return PHAssetResource.assetResources(for: asset).first?.originalFilename
     }
 }

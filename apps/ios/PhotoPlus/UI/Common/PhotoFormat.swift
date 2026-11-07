@@ -13,6 +13,16 @@ enum PhotoFormat {
         date.formatted(.dateTime.year().month(.wide).day().locale(Locale(identifier: "zh_CN")))
     }
 
+    /// "2025年7月8日 星期二 16:00", the first line of the info panel.
+    static func full(_ date: Date) -> String {
+        "\(day(date)) \(date.formatted(.dateTime.weekday(.wide).locale(Locale(identifier: "zh_CN")))) \(time(date))"
+    }
+
+    /// "5日", the label inside a Months card.
+    static func dayOfMonth(_ date: Date) -> String {
+        "\(Calendar.current.component(.day, from: date))日"
+    }
+
     static func time(_ date: Date) -> String {
         date.formatted(.dateTime.hour().minute().locale(Locale(identifier: "zh_CN")))
     }
@@ -26,7 +36,7 @@ enum PhotoFormat {
         ByteCountFormatter.string(fromByteCount: count, countStyle: .file)
     }
 
-    /// "12 张照片、3 个视频", the wording Photos uses under the grid.
+    /// "12 张照片、3 个视频", the line under the title when the grid rests on the newest photo.
     static func summary(_ items: [PhotoItem]) -> String {
         let videos = items.filter { $0.kind == .video }.count
         let photos = items.count - videos

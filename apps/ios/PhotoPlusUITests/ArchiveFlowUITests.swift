@@ -40,13 +40,14 @@ final class ArchiveFlowUITests: XCTestCase {
         let localCells = app.buttons.matching(identifier: "cell-local")
         waitForCount(localCells, count, app: app)
 
-        app.tabBars.buttons["设置"].tap()
+        app.buttons["tab-settings"].tap()
         answerSystemAlerts(["允许", "Allow"], timeout: 3)
         let archiveNow = app.buttons["archive-now"]
         XCTAssertTrue(archiveNow.waitForExistence(timeout: 15))
         waitEnabled(archiveNow)
         archiveNow.tap()
         answerSystemAlerts(["允许", "Allow"], timeout: 3)
+        assertArchiveStarted(archiveNow, in: app)
 
         let free = app.buttons["free-space"]
         scrollTo(free, in: app)
@@ -62,7 +63,7 @@ final class ArchiveFlowUITests: XCTestCase {
         answerSystemAlerts(["删除", "Delete"], timeout: 10)
         XCTAssertTrue(free.wait(for: \.label, toEqual: "释放手机空间（0 张）", timeout: 30))
 
-        app.tabBars.buttons["图库"].tap()
+        app.buttons["tab-library"].tap()
         let nasCells = app.buttons.matching(identifier: "cell-nas")
         waitForCount(nasCells, old, app: app)
         XCTAssertEqual(localCells.count, recent, "photos inside the retention window must stay on the phone")
@@ -70,15 +71,51 @@ final class ArchiveFlowUITests: XCTestCase {
         // A photo no longer on the phone still opens, with the original from the NAS.
         nasCells.firstMatch.tap()
         XCTAssertTrue(app.descendants(matching: .any)["viewer-back"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.descendants(matching: .any)["viewer-image"].waitForExistence(timeout: 60), "original did not load")
+        // This identifier appears only after the NAS's original bytes have decoded; a thumbnail or a local neighbour can't satisfy it.
+        XCTAssertTrue(app.descendants(matching: .any)["viewer-image-nas-original"].waitForExistence(timeout: 60), "NAS original did not load")
         XCTAssertFalse(app.descendants(matching: .any)["viewer-error"].exists)
+
+        // Deleting a NAS-only photo warns that it's permanent; backing out keeps it.
+        app.buttons["viewer-delete"].firstMatch.tap()
+        XCTAssertTrue(app.buttons["从 NAS 永久删除"].firstMatch.waitForExistence(timeout: 5))
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.3)).tap()
+        RunLoop.current.run(until: Date().addingTimeInterval(1))
+        app.descendants(matching: .any)["viewer-back"].firstMatch.tap()
+        waitForCount(nasCells, old, app: app)
     }
 
     /// Removes what the test left in the photo library.
     func testZCleanupFixtureAlbum() throws {
         let app = try launch(cleanup: true)
-        answerSystemAlerts(["删除", "Delete", "允许访问所有照片", "Allow Full Access"], timeout: 8)
+        answerSystemAlerts(["允许访问所有照片", "Allow Full Access"], timeout: 2)
+        // iOS's prompts can take a while to appear, and photos and the album may each get one. Leaving before
+        // answering would leave photos behind, and the next run would find the album and not reseed it.
+        let prompt = springboard.alerts.firstMatch
+        var deadline = Date().addingTimeInterval(30)
+        var answered = false
+        while Date() < deadline {
+            if prompt.exists {
+                answerSystemAlerts(["删除", "Delete"], timeout: 2)
+                answered = true
+                deadline = Date().addingTimeInterval(4)
+            }
+            RunLoop.current.run(until: Date().addingTimeInterval(0.25))
+        }
+        XCTAssertTrue(answered, "iOS never asked to delete the fixtures")
+        XCTAssertFalse(prompt.exists, "a delete prompt is still open")
+        RunLoop.current.run(until: Date().addingTimeInterval(2))
         app.terminate()
+    }
+
+    private func assertArchiveStarted(_ archiveNow: XCUIElement, in app: XCUIApplication) {
+        let pause = app.buttons["暂停"]
+        let result = app.staticTexts["archive-result"]
+        let started = NSPredicate { _, _ in pause.exists || result.exists }
+        XCTAssertEqual(
+            XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: started, object: nil)], timeout: 15),
+            .completed,
+            "tapping archive-now started nothing; enabled=\(archiveNow.isEnabled), hittable=\(archiveNow.isHittable)"
+        )
     }
 
     private func waitForCount(_ query: XCUIElementQuery, _ expected: Int, app: XCUIApplication, timeout: TimeInterval = 40) {

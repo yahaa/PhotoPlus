@@ -35,7 +35,7 @@ enum ArchivePlanner {
     }
 }
 
-/// Groups the timeline into the Years and Months views.
+/// Groups the timeline into the Years and Months views, and Collections' recent days.
 struct TimelineGroup: Identifiable, Hashable {
     let id: String
     let date: Date
@@ -47,7 +47,7 @@ enum TimelineGrouper {
         let grouped = Dictionary(grouping: items) { calendar.dateComponents(components, from: $0.takenAt) }
         return grouped.compactMap { key, members -> TimelineGroup? in
             guard let date = calendar.date(from: key) else { return nil }
-            return TimelineGroup(id: "\(key.year ?? 0)-\(key.month ?? 0)", date: date, items: members)
+            return TimelineGroup(id: "\(key.year ?? 0)-\(key.month ?? 0)-\(key.day ?? 0)", date: date, items: members)
         }
         .sorted { $0.date < $1.date }
     }

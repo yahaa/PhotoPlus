@@ -8,7 +8,7 @@ This repository is public. Machine-specific details (hosts, device IDs, signing 
 
 PhotoPlus is a private cloud photo album for home NAS hardware. `docs/ARCHITECTURE.md` describes the target system; only part of it exists:
 
-- **Built (single-user MVP):** the Go API (upload, list, download, delete, stats, one bearer token) and the iOS client (Library, Collections, viewer, Settings, foreground rolling archive).
+- **Built (single-user MVP):** the Go API (upload, list, download, delete, stats, one bearer token) and the iOS client (Library, Collections, Search, viewer, Settings, foreground rolling archive).
 - **Scaffold only:** the Android client (placeholder screens, empty repository and `ApiClient`), `deploy/scripts/*` and `storage/scripts/init-volumes.sh` (they only echo a placeholder).
 - **Not started:** accounts, family roles, QR pairing, Headscale, storage health, disk orchestration, background upload.
 
@@ -39,7 +39,7 @@ docker compose up -d      # SeaweedFS master 127.0.0.1:9333, filer 127.0.0.1:888
 
 The filer has no auth, so never publish it beyond loopback; only the Go API talks to it.
 
-### iOS (`apps/ios/`, Xcode 26, iOS 17 deployment target)
+### iOS (`apps/ios/`, Xcode 26, iOS 18 deployment target)
 
 Lint runs anywhere SwiftLint is installed; building and testing need a Mac.
 
@@ -50,7 +50,7 @@ xcodebuild -project PhotoPlus.xcodeproj -scheme PhotoPlus -destination 'platform
 xcodebuild ... -only-testing:PhotoPlusTests/ArchivePlannerTests/testFreesOldPhotoWithNASCopy test   # single test
 ```
 
-`project.yml` is the source of truth for the Xcode project. UI tests need `TEST_RUNNER_PHOTOPLUS_SERVER_URL` and `TEST_RUNNER_PHOTOPLUS_TOKEN`, and expect an empty NAS: leftover NAS photos change the cell counts they assert.
+`project.yml` is the source of truth for the Xcode project. `ScreenshotTourUITests` walks every screen against the behaviour measured in Apple's Photos and only runs with `TEST_RUNNER_PHOTOPLUS_SCREENSHOT_DIR` set. UI tests need `TEST_RUNNER_PHOTOPLUS_SERVER_URL` and `TEST_RUNNER_PHOTOPLUS_TOKEN`, and expect an empty NAS: leftover NAS photos change the cell counts they assert.
 
 **Never touch real photos in device tests.** `PHOTOPLUS_FIXTURE_ALBUM` (Debug only) confines `PhotoKitStore` to a generated album; `ArchiveFlowUITests` always sets it. `TEST_RUNNER_PHOTOPLUS_TOUR_UNCONFINED` is for simulators only.
 
@@ -86,6 +86,7 @@ Decisions that shape the code across components:
 - **Erasure coding is fixed at RS(10+4)** in open-source SeaweedFS; custom ratios are Enterprise-only. On a 1–8 bay box, shard placement must be disk-aware. See `docs/OBJECT_STORAGE_COMPARISON.md` for the storage comparison.
 - **Filer metadata needs its own backup**, since volume disks alone cannot restore the object index.
 - **Multi-tenancy lives in the network layer:** one Headscale user per customer isolates namespaces. Within a box, the first device to scan-bind becomes admin and invites family as read-only or read-write.
+- **The iOS bottom bar is custom, not `TabView`'s.** Photos' bar changes shape on rules `TabView` can't express: it collapses only away from the newest photo and stays collapsed in Years and Months, and there's no API to minimize it programmatically. `BottomBarModel` holds those rules.
 - **Admin UI is out of scope for the clients.** Phone settings cover the NAS connection, retention, storage status and safety tier; admin comes later as a web app.
 
 `docs/ARCHITECTURE.md` also lists the open risks to validate, such as background upload limits and EC behaviour on few disks.

@@ -6,6 +6,8 @@ struct ThumbnailView: View {
     @EnvironmentObject private var settings: AppSettings
     let item: PhotoItem
     var pixelSize: CGFloat = 400
+    /// Letterboxes instead of cropping, for the original-aspect grid.
+    var fits = false
 
     @State private var image: UIImage?
 
@@ -13,7 +15,7 @@ struct ThumbnailView: View {
         Color(.secondarySystemBackground)
             .overlay {
                 if let image {
-                    Image(uiImage: image).resizable().scaledToFill()
+                    Image(uiImage: image).resizable().aspectRatio(contentMode: fits ? .fit : .fill)
                 }
             }
             .clipped()

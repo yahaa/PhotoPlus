@@ -22,6 +22,7 @@ enum TimelineMerger {
                 height: asset.height,
                 isFavorite: asset.isFavorite,
                 isBurst: asset.isBurst,
+                isScreenshot: asset.isScreenshot,
                 localAssetID: asset.id,
                 remote: paired
             )

@@ -6,16 +6,22 @@ struct ContentView: View {
     @EnvironmentObject private var store: LibraryStore
     @EnvironmentObject private var archive: ArchiveEngine
     @Environment(\.scenePhase) private var scenePhase
+    @StateObject private var bar = BottomBarModel()
 
     var body: some View {
-        TabView {
-            LibraryView()
-                .tabItem { Label("图库", systemImage: "photo.fill.on.rectangle.fill") }
-            CollectionsView()
-                .tabItem { Label("精选集", systemImage: "square.stack.fill") }
-            SettingsView()
-                .tabItem { Label("设置", systemImage: "gearshape.fill") }
+        TabView(selection: $bar.tab) {
+            LibraryView().tag(AppTab.library).toolbar(.hidden, for: .tabBar)
+            CollectionsView().tag(AppTab.collections).toolbar(.hidden, for: .tabBar)
+            SettingsView().tag(AppTab.settings).toolbar(.hidden, for: .tabBar)
+            SearchView().tag(AppTab.search).toolbar(.hidden, for: .tabBar)
         }
+        .overlay(alignment: .bottom) {
+            if !bar.isHidden {
+                MainBottomBar(model: bar).transition(.opacity)
+            }
+        }
+        .ignoresSafeArea(.keyboard, edges: .bottom)
+        .environmentObject(bar)
         .task {
             await store.start()
             runAutoArchive()

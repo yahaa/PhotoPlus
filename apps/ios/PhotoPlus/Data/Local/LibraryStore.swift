@@ -7,6 +7,7 @@ import UIKit
 final class LibraryStore: NSObject, ObservableObject {
     enum NASState: Equatable {
         case notConfigured
+        case connecting
         case connected
         case unreachable(String)
     }
@@ -16,6 +17,8 @@ final class LibraryStore: NSObject, ObservableObject {
     @Published private(set) var nasState: NASState = .notConfigured
     @Published private(set) var nasStats: NASStats?
     @Published private(set) var hasLoaded = false
+    /// Most recent first, for Search's Recents.
+    @Published private(set) var recentlyViewedIDs: [String]
 
     let settings: AppSettings
     let photoKit: PhotoKitStore
@@ -25,10 +28,13 @@ final class LibraryStore: NSObject, ObservableObject {
     private let indexFile: URL = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
         .appending(path: "remote-index.json")
     private var reloadTask: Task<Void, Never>?
+    private static let recentsKey = "recentlyViewed"
+    private static let recentsLimit = 20
 
     init(settings: AppSettings, photoKit: PhotoKitStore = .shared) {
         self.settings = settings
         self.photoKit = photoKit
+        recentlyViewedIDs = UserDefaults.standard.stringArray(forKey: Self.recentsKey) ?? []
         super.init()
     }
 
@@ -72,7 +78,6 @@ final class LibraryStore: NSObject, ObservableObject {
         do {
             try await fetchRemoteStrict()
         } catch {
-            nasState = settings.apiClient == nil ? .notConfigured : .unreachable(error.localizedDescription)
             publish()
         }
     }
@@ -80,10 +85,21 @@ final class LibraryStore: NSObject, ObservableObject {
     /// Fails instead of falling back to the cached index. Anything about to delete
     /// local data must go through this, so it never trusts a stale view of the NAS.
     func fetchRemoteStrict() async throws {
-        guard let api = settings.apiClient else { throw ApiError.notConfigured }
+        guard let api = settings.apiClient else {
+            nasState = .notConfigured
+            throw ApiError.notConfigured
+        }
+        if nasState != .connected { nasState = .connecting }
         async let photos = api.allPhotos()
         async let stats = api.stats()
-        let (fetchedPhotos, fetchedStats) = try await (photos, stats)
+        let fetchedPhotos: [RemotePhoto]
+        let fetchedStats: NASStats
+        do {
+            (fetchedPhotos, fetchedStats) = try await (photos, stats)
+        } catch {
+            nasState = .unreachable(error.localizedDescription)
+            throw error
+        }
         remote = fetchedPhotos
         nasStats = fetchedStats
         nasState = .connected
@@ -113,10 +129,16 @@ final class LibraryStore: NSObject, ObservableObject {
         await reload()
     }
 
-    func setFavorite(_ isFavorite: Bool, item: PhotoItem) async {
-        guard let id = item.localAssetID else { return }
-        try? await photoKit.setFavorite(isFavorite, assetID: id)
+    func setFavorite(_ isFavorite: Bool, items: [PhotoItem]) async throws {
+        try await photoKit.setFavorite(isFavorite, assetIDs: items.compactMap(\.localAssetID))
         await reloadLocal()
+    }
+
+    func noteViewed(_ item: PhotoItem) {
+        var ids = recentlyViewedIDs.filter { $0 != item.id }
+        ids.insert(item.id, at: 0)
+        recentlyViewedIDs = Array(ids.prefix(Self.recentsLimit))
+        UserDefaults.standard.set(recentlyViewedIDs, forKey: Self.recentsKey)
     }
 
     private func publish() {
