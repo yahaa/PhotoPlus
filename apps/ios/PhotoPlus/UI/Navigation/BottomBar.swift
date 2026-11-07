@@ -46,6 +46,8 @@ final class BottomBarModel: ObservableObject {
     @Published private(set) var scrollToNewestRequests = 0
     @Published private var hiders = Set<UUID>()
     private(set) var previousTab: AppTab = .library
+    /// The date at the top of the All grid, so Years and Months open where the user was looking.
+    var anchorDate: Date?
 
     var isHidden: Bool { !hiders.isEmpty || tab == .search }
 
@@ -116,7 +118,13 @@ struct MainBottomBar: View {
                     tabs.glassID("tabs", in: glass)
                     Spacer(minLength: 0)
                 }
-                Button { model.select(.search) } label: { GlassIcon(symbol: "magnifyingglass", size: 48) }
+                Button {
+                    var transaction = Transaction()
+                    transaction.disablesAnimations = true
+                    withTransaction(transaction) { model.select(.search) }
+                } label: {
+                    GlassIcon(symbol: "magnifyingglass", size: 48)
+                }
                     .glassID("search", in: glass)
                     .accessibilityLabel("搜索")
                     .accessibilityIdentifier("tab-search")
@@ -135,13 +143,17 @@ struct MainBottomBar: View {
             tabButton(.settings, title: "设置", symbol: "gearshape.fill", identifier: "tab-settings")
         }
         .padding(4)
-        .glass(in: Capsule())
+        .glass(in: Capsule(), reactsToTouch: false)
+        .animation(.snappy, value: model.tab)
     }
 
     private func tabButton(_ tab: AppTab, title: String, symbol: String, identifier: String) -> some View {
         let isSelected = model.tab == tab
         return Button {
-            withAnimation(.snappy) { model.select(tab) }
+            // Only the highlight moves: Photos cuts between tabs' content rather than fading.
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) { model.select(tab) }
         } label: {
             VStack(spacing: 2) {
                 Image(systemName: symbol).font(.system(size: 19))
@@ -166,7 +178,7 @@ struct MainBottomBar: View {
             ForEach(LibraryMode.allCases) { mode in
                 let isSelected = model.mode == mode
                 Button {
-                    withAnimation(.snappy) { model.mode = mode }
+                    withAnimation(.easeInOut(duration: 0.45)) { model.mode = mode }
                 } label: {
                     Text(mode.title)
                         .font(.subheadline.weight(.medium))
@@ -183,6 +195,6 @@ struct MainBottomBar: View {
             }
         }
         .padding(4)
-        .glass(in: Capsule())
+        .glass(in: Capsule(), reactsToTouch: false)
     }
 }

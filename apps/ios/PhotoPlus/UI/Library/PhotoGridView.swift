@@ -1,9 +1,24 @@
 import SwiftUI
 
+private struct ScrollFacts: Equatable {
+    let atNewest: Bool
+    let fills: Bool
+}
+
 /// Scroll facts that change too often to live in view state; re-rendering the grid on each would stutter.
 private final class GridScrollTracker {
     var visibleIDs: [String] = []
     var dates: [String: Date] = [:]
+    /// Cells in content coordinates, which scrolling doesn't change; `screenFrame` applies the scroll.
+    var frames: [String: CGRect] = [:]
+    var scrollOrigin = CGPoint.zero
+    var viewportOrigin = CGPoint.zero
+
+    /// Where a cell is on screen right now, for the viewer's flight.
+    func screenFrame(of id: String) -> CGRect? {
+        guard visibleIDs.contains(id), let frame = frames[id] else { return nil }
+        return frame.offsetBy(dx: viewportOrigin.x - scrollOrigin.x, dy: viewportOrigin.y - scrollOrigin.y)
+    }
 }
 
 /// The edge-to-edge grid behind the Library, albums and search results. It opens at the newest photo.
@@ -40,7 +55,8 @@ struct PhotoGridView: View {
     @State private var isSearching = false
     @State private var query = ""
     @State private var hasOpenedAtNewest = false
-    @Namespace private var zoom
+    @State private var flyingPhotoID: String?
+    @StateObject private var pinch = GridPinch()
 
     private var items: [PhotoItem] {
         let filtered = filter == .all ? allItems : allItems.filter(filter.matches)
@@ -48,6 +64,7 @@ struct PhotoGridView: View {
         return tokens.isEmpty ? filtered : LibrarySearch.filter(filtered, query: query)
     }
 
+    private static let contentSpace = "grid-content"
     private var isLibrary: Bool { style == .library }
     /// The Library's title and buttons sit on darkened photos.
     private var usesDarkChrome: Bool { isLibrary && fillsScreen }
@@ -59,7 +76,7 @@ struct PhotoGridView: View {
                 .onChange(of: scrollTarget, initial: true) { _, target in
                     guard let target else { return }
                     DispatchQueue.main.async {
-                        proxy.scrollTo(target, anchor: .top)
+                        proxy.scrollTo(target, anchor: .center)
                         scrollTarget = nil
                     }
                 }
@@ -101,7 +118,11 @@ struct PhotoGridView: View {
                 LibraryHeader(title: title, subtitle: isAtNewest ? summary : visibleDay ?? summary, isOnPhotos: fillsScreen)
             }
         }
-        .overlay { emptyState }
+        .overlay {
+            if items.isEmpty, store.hasLoaded, !isLoading {
+                GridEmptyState(title: title, query: query, filter: filter, isAlbum: style == .album)
+            }
+        }
         .overlay(alignment: .bottom) { bottomControls }
         .navigationTitle(style == .album && !items.isEmpty ? title : "")
         .navigationBarTitleDisplayMode(.inline)
@@ -117,8 +138,14 @@ struct PhotoGridView: View {
         .toolbarColorScheme(usesDarkChrome && isActive ? .dark : colorScheme, for: .navigationBar)
         .hidesBottomBar(isSelecting && isActive)
         .fullScreenCover(item: $viewerStart) { start in
-            PhotoViewer(items: items, startID: start.id, currentID: $viewerCurrentID)
-                .navigationTransition(.zoom(sourceID: viewerCurrentID ?? start.id, in: zoom))
+            PhotoViewer(
+                items: items,
+                startID: start.id,
+                currentID: $viewerCurrentID,
+                flightPixels: density.pixelSize,
+                sourceFrame: tracker.screenFrame(of:),
+                onFlyingPhotoChange: { flyingPhotoID = $0 }
+            )
         }
         .modifier(PhotoActionPresenter(actions: actions))
         .modifier(DeleteConfirmation(targets: $actions.deleteTargets) {
@@ -131,6 +158,10 @@ struct PhotoGridView: View {
     }
 
     private func grid(_ proxy: ScrollViewProxy) -> some View {
+        PinchScaled(pinch: pinch) { scrollingGrid(proxy) }
+    }
+
+    private func scrollingGrid(_ proxy: ScrollViewProxy) -> some View {
         ScrollView {
             VStack(spacing: 0) {
                 if style == .album, !items.isEmpty { AlbumHeading(title: title, summary: PhotoFormat.summary(items)) }
@@ -140,18 +171,26 @@ struct PhotoGridView: View {
                 .scrollTargetLayout()
                 if isLibrary { ArchiveStatusLine().padding(.top, 8) }
             }
+            .coordinateSpace(name: Self.contentSpace)
         }
-        .contentMargins(.top, isLibrary ? 112 : 0, for: .scrollContent)
+        .onGeometryChange(for: CGPoint.self, of: { $0.frame(in: .global).origin }, action: { tracker.viewportOrigin = $0 })
+        .onScrollGeometryChange(for: CGPoint.self, of: \.contentOffset) { _, offset in tracker.scrollOrigin = offset }
+        .contentMargins(.top, isLibrary ? 152 : 0, for: .scrollContent)
         .contentMargins(.bottom, style == .results ? 8 : BottomBarMetrics.height, for: .scrollContent)
         .defaultScrollAnchor(.bottom, for: .initialOffset)
         .defaultScrollAnchor(.bottom, for: .sizeChanges)
         .defaultScrollAnchor(.top, for: .alignment)
         .ignoresSafeArea(edges: isLibrary ? .top : [])
         .hidesScrollEdgeEffect()
-        .simultaneousGesture(MagnifyGesture().onEnded { pinched($0.magnification, proxy: proxy) })
+        .gesture(GridPinchRecognizer(
+            onChange: { pinch.track(scale: $0, at: $1, limit: limit(for: $0)) },
+            onEnd: { pinched($0, proxy: proxy) }
+        ))
         .onScrollTargetVisibilityChange(idType: String.self, threshold: 0.3) { ids in
             tracker.visibleIDs = ids
-            let day = ids.first.flatMap { tracker.dates[$0] }.map(PhotoFormat.day)
+            let top = ids.first.flatMap { tracker.dates[$0] }
+            if isLibrary { bar.anchorDate = top }
+            let day = top.map(PhotoFormat.day)
             if day != visibleDay { visibleDay = day }
         }
         .onScrollGeometryChange(for: ScrollFacts.self) { geometry in
@@ -166,29 +205,27 @@ struct PhotoGridView: View {
         }
     }
 
-    private struct ScrollFacts: Equatable {
-        let atNewest: Bool
-        let fills: Bool
-    }
-
     private func cell(_ item: PhotoItem) -> some View {
         Button {
             if isSelecting {
                 toggle(item)
             } else {
                 viewerCurrentID = item.id
-                viewerStart = item
                 store.noteViewed(item)
+                // The viewer animates itself in, from this cell; the cover's own slide would carry it up from the bottom.
+                PresentationAnimation.suspend()
+                viewerStart = item
             }
         } label: {
             ThumbnailView(item: item, pixelSize: density.pixelSize, fits: showsOriginalAspect && density != .single)
                 .aspectRatio(density == .single ? item.aspectRatio : 1, contentMode: .fit)
                 .overlay { GridCellBadges(item: item, isSelected: selection.contains(item.id), isSelecting: isSelecting) }
+                .opacity(flyingPhotoID == item.id ? 0 : 1)
                 .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(GridCellButtonStyle())
         .id(item.id)
-        .matchedTransitionSource(id: item.id, in: zoom)
+        .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .named(Self.contentSpace)) }, action: { tracker.frames[item.id] = $0 })
         .contextMenu {
             PhotoMenuItems(actions: actions, items: [item])
         } preview: {
@@ -197,31 +234,11 @@ struct PhotoGridView: View {
                 .frame(width: 360)
                 .environmentObject(store.settings)
         }
-        .accessibilityIdentifier("cell-\(storageTag(item))")
+        .accessibilityIdentifier("cell-\(item.storageTag)")
         .accessibilityLabel(PhotoFormat.day(item.takenAt))
     }
 
-    private func storageTag(_ item: PhotoItem) -> String {
-        switch item.storage {
-        case .localOnly: "local"
-        case .both: "both"
-        case .nasOnly: "nas"
-        }
-    }
-
     // MARK: Header
-
-    @ViewBuilder private var emptyState: some View {
-        if items.isEmpty, store.hasLoaded, !isLoading {
-            if !query.isEmpty {
-                ContentUnavailableView.search(text: query)
-            } else if filter != .all {
-                ContentUnavailableView("没有符合筛选条件的项目", systemImage: filter.symbol)
-            } else if style == .album {
-                EmptyAlbumHero(title: title)
-            }
-        }
-    }
 
     // MARK: Bars
 
@@ -265,20 +282,24 @@ struct PhotoGridView: View {
         selection = []
     }
 
-    private func pinched(_ magnification: CGFloat, proxy: ScrollViewProxy) {
-        let next: GridDensity
-        if magnification > 1.15 {
-            next = density.sparser
-        } else if magnification < 0.87 {
-            next = density.denser
-        } else {
+    /// How far the grid may scale before the next density would be showing.
+    private func limit(for scale: CGFloat) -> CGFloat {
+        let next = scale >= 1 ? density.sparser : density.denser
+        return CGFloat(density.rawValue) / CGFloat(next.rawValue)
+    }
+
+    private func pinched(_ scale: CGFloat, proxy: ScrollViewProxy) {
+        let next = scale > 1.15 ? density.sparser : (scale < 0.87 ? density.denser : density)
+        guard next != density else {
+            pinch.settle()
             return
         }
-        guard next != density else { return }
         let anchor = tracker.visibleIDs.dropFirst(tracker.visibleIDs.count / 2).first
-        withAnimation(.snappy) { density = next }
-        if let anchor {
-            DispatchQueue.main.async { proxy.scrollTo(anchor, anchor: .center) }
-        }
+        // Swap at the scale the old grid reached, so the new one takes over without a jump.
+        let ratio = CGFloat(density.rawValue) / CGFloat(next.rawValue)
+        pinch.rebase(by: ratio)
+        density = next
+        if let anchor { DispatchQueue.main.async { proxy.scrollTo(anchor, anchor: .center) } }
+        pinch.settle()
     }
 }

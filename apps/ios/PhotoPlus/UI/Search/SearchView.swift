@@ -75,6 +75,7 @@ struct SearchView: View {
                     ForEach(recents) { item in
                         Button {
                             viewerCurrentID = item.id
+                            PresentationAnimation.suspend()
                             viewerStart = item
                         } label: {
                             CollectionCard(title: PhotoFormat.day(item.takenAt), cover: item, symbol: "photo")

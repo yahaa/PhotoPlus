@@ -87,6 +87,7 @@ Decisions that shape the code across components:
 - **Filer metadata needs its own backup**, since volume disks alone cannot restore the object index.
 - **Multi-tenancy lives in the network layer:** one Headscale user per customer isolates namespaces. Within a box, the first device to scan-bind becomes admin and invites family as read-only or read-write.
 - **The iOS bottom bar is custom, not `TabView`'s.** Photos' bar changes shape on rules `TabView` can't express: it collapses only away from the newest photo and stays collapsed in Years and Months, and there's no API to minimize it programmatically. `BottomBarModel` holds those rules.
+- **The iOS viewer draws its own transition instead of using `.zoom`.** Photos flies only the photo while the grid shows behind it; `.zoom` shrinks the whole screen as a rounded card. `PhotoViewer` presents over a clear background with UIKit's animations paused, and moves between phases on a timer, because `withAnimation`'s completion sometimes never fired and left it stuck.
 - **Admin UI is out of scope for the clients.** Phone settings cover the NAS connection, retention, storage status and safety tier; admin comes later as a web app.
 
 `docs/ARCHITECTURE.md` also lists the open risks to validate, such as background upload limits and EC behaviour on few disks.

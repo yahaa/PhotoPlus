@@ -18,6 +18,7 @@ struct PagePan {
 
     let phase: Phase
     let translation: CGFloat
+    var translationX: CGFloat = 0
     let velocity: CGFloat
 }
 
@@ -26,7 +27,6 @@ struct PhotoPage: View {
     @EnvironmentObject private var settings: AppSettings
     let item: PhotoItem
     let isCurrent: Bool
-    let allowsPullDown: Bool
     let gestures: PageGestures
 
     @State private var image: UIImage?
@@ -40,7 +40,7 @@ struct PhotoPage: View {
             if let player {
                 VideoPlayer(player: player)
             } else if let image {
-                ZoomableImage(image: image, isCurrent: isCurrent, allowsPullDown: allowsPullDown, gestures: gestures)
+                ZoomableImage(image: image, isCurrent: isCurrent, gestures: gestures)
                     .accessibilityIdentifier(imageIdentifier)
             }
             if item.kind == .video, player == nil {
@@ -127,7 +127,6 @@ struct PhotoPage: View {
 struct ZoomableImage: UIViewRepresentable {
     let image: UIImage
     let isCurrent: Bool
-    let allowsPullDown: Bool
     let gestures: PageGestures
 
     func makeCoordinator() -> Coordinator { Coordinator() }
@@ -150,14 +149,12 @@ struct ZoomableImage: UIViewRepresentable {
 
     func updateUIView(_ scrollView: ZoomScrollView, context: Context) {
         context.coordinator.gestures = gestures
-        context.coordinator.allowsPullDown = allowsPullDown
         scrollView.setImage(image)
         if !isCurrent, scrollView.zoomScale > 1 { scrollView.setZoomScale(1, animated: false) }
     }
 
     final class Coordinator: NSObject, UIScrollViewDelegate, UIGestureRecognizerDelegate {
         var gestures: PageGestures?
-        var allowsPullDown = false
 
         func viewForZooming(in scrollView: UIScrollView) -> UIView? {
             (scrollView as? ZoomScrollView)?.imageView
@@ -175,31 +172,34 @@ struct ZoomableImage: UIViewRepresentable {
 
         @objc func doubleTapped(_ recognizer: UITapGestureRecognizer) {
             guard let scrollView = recognizer.view as? ZoomScrollView, let imageView = scrollView.imageView else { return }
+            // The bars go as the zoom starts, not when it ends, as in Photos.
             if scrollView.zoomScale > 1.01 {
+                gestures?.onZoomChange(false)
                 scrollView.setZoomScale(1, animated: true)
             } else {
+                gestures?.onZoomChange(true)
                 scrollView.zoomToFill(around: recognizer.location(in: imageView))
             }
         }
 
         @objc func panned(_ recognizer: UIPanGestureRecognizer) {
-            let translation = recognizer.translation(in: recognizer.view).y
+            let moved = recognizer.translation(in: recognizer.view)
             let velocity = recognizer.velocity(in: recognizer.view).y
+            let phase: PagePan.Phase
             switch recognizer.state {
-            case .began: gestures?.onPan(PagePan(phase: .began, translation: translation, velocity: velocity))
-            case .changed: gestures?.onPan(PagePan(phase: .changed, translation: translation, velocity: velocity))
-            case .ended, .cancelled, .failed: gestures?.onPan(PagePan(phase: .ended, translation: translation, velocity: velocity))
-            default: break
+            case .began: phase = .began
+            case .changed: phase = .changed
+            case .ended, .cancelled, .failed: phase = .ended
+            default: return
             }
+            gestures?.onPan(PagePan(phase: phase, translation: moved.y, translationX: moved.x, velocity: velocity))
         }
 
-        /// Vertical drags at rest open the panel. Downward ones are left to the zoom transition's
-        /// dismiss gesture unless the panel is open.
+        /// Vertical drags at rest belong to the viewer: up opens the panel, down carries the photo away.
         func gestureRecognizerShouldBegin(_ recognizer: UIGestureRecognizer) -> Bool {
             guard let pan = recognizer as? UIPanGestureRecognizer, let scrollView = pan.view as? UIScrollView else { return true }
             let velocity = pan.velocity(in: pan.view)
-            guard scrollView.zoomScale <= 1.01, abs(velocity.y) > abs(velocity.x) * 1.2 else { return false }
-            return velocity.y < 0 || allowsPullDown
+            return scrollView.zoomScale <= 1.01 && abs(velocity.y) > abs(velocity.x) * 1.2
         }
 
         func gestureRecognizer(_ recognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {

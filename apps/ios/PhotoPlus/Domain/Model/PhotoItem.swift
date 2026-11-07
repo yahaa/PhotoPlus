@@ -62,6 +62,15 @@ struct PhotoItem: Identifiable, Hashable {
         }
     }
 
+    /// The storage state in a word, for accessibility identifiers.
+    var storageTag: String {
+        switch storage {
+        case .localOnly: "local"
+        case .both: "both"
+        case .nasOnly: "nas"
+        }
+    }
+
     var aspectRatio: CGFloat {
         width > 0 && height > 0 ? CGFloat(width) / CGFloat(height) : 1
     }

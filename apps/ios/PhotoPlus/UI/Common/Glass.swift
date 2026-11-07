@@ -2,8 +2,10 @@ import SwiftUI
 
 /// Liquid Glass on iOS 26, a material before it.
 extension View {
-    func glass<S: Shape>(in shape: S) -> some View {
-        modifier(GlassBackground(shape: shape))
+    /// `reactsToTouch` is for a single control. On a capsule holding several buttons, the glass's own
+    /// touch handling competes with theirs, and tabs were seen to ignore taps.
+    func glass<S: Shape>(in shape: S, reactsToTouch: Bool = true) -> some View {
+        modifier(GlassBackground(shape: shape, reactsToTouch: reactsToTouch))
     }
 
     /// Darkens glass over darkened photos. Toolbar items ignore the color scheme for their glass.
@@ -46,10 +48,12 @@ extension EnvironmentValues {
 private struct GlassBackground<S: Shape>: ViewModifier {
     @Environment(\.usesDarkGlass) private var isDark
     let shape: S
+    let reactsToTouch: Bool
 
     func body(content: Content) -> some View {
         if #available(iOS 26.0, *) {
-            content.glassEffect(isDark ? .regular.tint(.black.opacity(0.45)).interactive() : .regular.interactive(), in: shape)
+            let base = isDark ? Glass.regular.tint(.black.opacity(0.45)) : Glass.regular
+            content.glassEffect(base.interactive(reactsToTouch), in: shape)
         } else {
             content.background(isDark ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(.regularMaterial), in: shape)
         }

@@ -17,7 +17,7 @@ struct ContentView: View {
         }
         .overlay(alignment: .bottom) {
             if !bar.isHidden {
-                MainBottomBar(model: bar).transition(.opacity)
+                MainBottomBar(model: bar)
             }
         }
         .ignoresSafeArea(.keyboard, edges: .bottom)

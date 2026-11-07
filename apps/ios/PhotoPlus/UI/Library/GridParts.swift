@@ -1,5 +1,30 @@
 import SwiftUI
 
+/// What a grid shows when nothing matches.
+struct GridEmptyState: View {
+    let title: String
+    let query: String
+    let filter: LibraryFilter
+    let isAlbum: Bool
+
+    var body: some View {
+        if !query.isEmpty {
+            ContentUnavailableView.search(text: query)
+        } else if filter != .all {
+            ContentUnavailableView("没有符合筛选条件的项目", systemImage: filter.symbol)
+        } else if isAlbum {
+            EmptyAlbumHero(title: title)
+        }
+    }
+}
+
+/// Photos doesn't dim a cell when it's tapped, unlike SwiftUI's button styles.
+struct GridCellButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+    }
+}
+
 /// Badges drawn over a cell, in the corners Photos uses.
 struct GridCellBadges: View {
     let item: PhotoItem
@@ -91,7 +116,7 @@ struct BottomSearchField: View {
         }
         .buttonStyle(.plain)
         .padding(.horizontal, 16)
-        .onAppear { isFocused = true }
+        .task { isFocused = true }
     }
 }
 
@@ -177,7 +202,7 @@ struct GridTopControls<MoreMenu: View>: View {
                     .accessibilityLabel("更多")
                     .accessibilityIdentifier("selection-more")
                 }
-                .glass(in: Capsule())
+                .glass(in: Capsule(), reactsToTouch: false)
                 Button(action: onClose) { GlassIcon(symbol: "xmark") }
                     .accessibilityLabel("取消")
                     .accessibilityIdentifier("selection-close")

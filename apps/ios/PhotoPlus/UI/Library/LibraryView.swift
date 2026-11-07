@@ -6,6 +6,7 @@ struct LibraryView: View {
     @EnvironmentObject private var bar: BottomBarModel
     @State private var scrollTarget: String?
     @State private var monthTarget: String?
+    @State private var yearTarget: String?
 
     var body: some View {
         NavigationStack {
@@ -33,26 +34,38 @@ struct LibraryView: View {
                     .opacity(bar.mode == .all ? 1 : 0)
                     .allowsHitTesting(bar.mode == .all)
                 if bar.mode == .months {
-                    TimelineCardsView(style: .months, groups: TimelineGrouper.groups(store.items, by: [.year, .month]), target: $monthTarget) { group in
-                        scrollTarget = group.items.first?.id
-                        bar.mode = .all
+                    TimelineCardsView(style: .months, groups: months, target: $monthTarget) { group in
+                        scrollTarget = TimelineCardsView.hero(of: group).id
+                        withAnimation(.easeInOut(duration: 0.45)) { bar.mode = .all }
                     }
                     .background(Color(.systemBackground))
                 } else if bar.mode == .years {
-                    TimelineCardsView(style: .years, groups: TimelineGrouper.groups(store.items, by: [.year]), target: .constant(nil)) { group in
+                    TimelineCardsView(style: .years, groups: years, target: $yearTarget) { group in
                         monthTarget = monthID(of: group)
-                        bar.mode = .months
+                        withAnimation(.easeInOut(duration: 0.45)) { bar.mode = .months }
                     }
                     .background(Color(.systemBackground))
+                }
+            }
+            .onChange(of: bar.mode) { old, new in
+                // Coming from All, open at the period the grid was showing, as Photos does.
+                guard old == .all, let anchor = bar.anchorDate else { return }
+                if new == .months {
+                    monthTarget = months.last { Calendar.current.isDate($0.date, equalTo: anchor, toGranularity: .month) }?.id
+                } else if new == .years {
+                    yearTarget = years.last { Calendar.current.isDate($0.date, equalTo: anchor, toGranularity: .year) }?.id
                 }
             }
         }
     }
 
+    private var months: [TimelineGroup] { TimelineGrouper.groups(store.items, by: [.year, .month]) }
+    private var years: [TimelineGroup] { TimelineGrouper.groups(store.items, by: [.year]) }
+
     /// The month holding the year card's photo, so the tap lands where the finger was looking.
     private func monthID(of year: TimelineGroup) -> String? {
         let hero = TimelineCardsView.hero(of: year)
-        return TimelineGrouper.groups(store.items, by: [.year, .month]).first { $0.items.contains { $0.id == hero.id } }?.id
+        return months.first { $0.items.contains { $0.id == hero.id } }?.id
     }
 }
 
@@ -100,12 +113,22 @@ struct TimelineCardsView: View {
                     target = nil
                 }
             }
+            .task { await preloadHeroes() }
         }
     }
 
+    /// Cards crossfade in, so their photos should already be there, nearest the landing point first.
+    private func preloadHeroes() async {
+        let center = target.flatMap { id in groups.firstIndex { $0.id == id } } ?? groups.count - 1
+        let nearest = groups.indices.sorted { abs($0 - center) < abs($1 - center) }.prefix(12)
+        await ThumbnailMemory.preload(nearest.map { Self.hero(of: groups[$0]) }, pixels: Self.cardPixels)
+    }
+
+    private static let cardPixels: CGFloat = 800
+
     private func card(_ group: TimelineGroup) -> some View {
         let hero = Self.hero(of: group)
-        return ThumbnailView(item: hero, pixelSize: 1000)
+        return ThumbnailView(item: hero, pixelSize: Self.cardPixels)
             .frame(height: style == .years ? 270 : 240)
             .frame(maxWidth: .infinity)
             .overlay(alignment: .topLeading) {
