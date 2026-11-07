@@ -29,3 +29,6 @@ storage/data/filer/**
 .DS_Store
 .idea/
 *.iml
+
+# Machine-specific Claude Code notes
+CLAUDE.local.md

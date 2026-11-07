@@ -1,10 +1,11 @@
 # Single-node SeaweedFS: master + volume + filer (local dirs as volume mounts).
+# The filer has no auth, so host ports stay on loopback; only the Go API talks to it.
 services:
   master:
     image: chrislusf/seaweedfs:latest
     command: "master -ip=master -port=9333 -mdir=/data"
     ports:
-      - "9333:9333"
+      - "127.0.0.1:9333:9333"
     volumes:
       - ./data/master:/data
     restart: unless-stopped
@@ -12,8 +13,6 @@ services:
   volume:
     image: chrislusf/seaweedfs:latest
     command: "volume -mserver=master:9333 -ip=volume -port=8080 -dir=/data -max=100"
-    ports:
-      - "8080:8080"
     volumes:
       - ./data/volume:/data
     depends_on:
@@ -24,7 +23,7 @@ services:
     image: chrislusf/seaweedfs:latest
     command: "filer -master=master:9333 -ip=filer -port=8888"
     ports:
-      - "8888:8888"
+      - "127.0.0.1:8888:8888"
     volumes:
       - ./data/filer:/data
     depends_on:
