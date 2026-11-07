@@ -25,6 +25,7 @@
 		487DBBF507960B9DF5DC802B /* PhotoPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 864B5CB409AC5E6EC094AE3A /* PhotoPage.swift */; };
 		4ADBA7D3DDE0ECBEC6609CB7 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BD83B08648C3803D829DDAE /* SettingsView.swift */; };
 		51F51D7C2CAE04998848D2C7 /* PhotoActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2E260BA272104CCAF4370FA /* PhotoActions.swift */; };
+		550BFBEFEE469B43A8389A06 /* GridLayoutTable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075707982A74F7EE674F7DED /* GridLayoutTable.swift */; };
 		6594E127257A6D039F50259A /* FixtureSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A46FA5414CA92A40C5C4045 /* FixtureSeeder.swift */; };
 		6CC87300F2B5529ECF82CE9B /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB83AAC430212B4D4C6743E5 /* LibraryView.swift */; };
 		7A9E269E1B3C9B467C725F1E /* GridPinch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 828791FB706D92AAD8D6F712 /* GridPinch.swift */; };
@@ -74,6 +75,7 @@
 /* Begin PBXFileReference section */
 		021366D626999A7B30308A66 /* BottomBarModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BottomBarModelTests.swift; sourceTree = "<group>"; };
 		0492270562C9B36B424F5A88 /* PhotoViewer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoViewer.swift; sourceTree = "<group>"; };
+		075707982A74F7EE674F7DED /* GridLayoutTable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GridLayoutTable.swift; sourceTree = "<group>"; };
 		0BD83B08648C3803D829DDAE /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		116A292D045C790DAC395B04 /* ApiClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiClient.swift; sourceTree = "<group>"; };
 		19669F0A90BB78B76BD43669 /* PhotoGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoGridView.swift; sourceTree = "<group>"; };
@@ -204,6 +206,7 @@
 			isa = PBXGroup;
 			children = (
 				7B1B081CB9E24A1AEA6A049A /* ArchivePlanner.swift */,
+				075707982A74F7EE674F7DED /* GridLayoutTable.swift */,
 				30141B2CD75981B2CE902B23 /* LibraryQuery.swift */,
 				B146AD33150A75A6FEC837A6 /* TimelineMerger.swift */,
 			);
@@ -468,6 +471,7 @@
 				D6E9A7D7E9D296A6D171D2EC /* DeleteConfirmation.swift in Sources */,
 				6594E127257A6D039F50259A /* FixtureSeeder.swift in Sources */,
 				A4801F4D76EF8A3075A1D9D5 /* Glass.swift in Sources */,
+				550BFBEFEE469B43A8389A06 /* GridLayoutTable.swift in Sources */,
 				271C9365B540808165940E57 /* GridParts.swift in Sources */,
 				7A9E269E1B3C9B467C725F1E /* GridPinch.swift in Sources */,
 				BFEF8480388AA44A457B2FCB /* ImageCache.swift in Sources */,

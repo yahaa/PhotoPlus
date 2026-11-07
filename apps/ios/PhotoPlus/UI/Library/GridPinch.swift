@@ -23,10 +23,16 @@ final class GridPinch: ObservableObject {
 
 struct PinchScaled<Content: View>: View {
     @ObservedObject var pinch: GridPinch
-    @ViewBuilder let content: () -> Content
+    /// Built once in `init`: calling a closure from `body` would rebuild the grid on every frame of a pinch.
+    private let content: Content
+
+    init(pinch: GridPinch, @ViewBuilder content: () -> Content) {
+        self.pinch = pinch
+        self.content = content()
+    }
 
     var body: some View {
-        content().scaleEffect(pinch.scale, anchor: pinch.anchor)
+        content.scaleEffect(pinch.scale, anchor: pinch.anchor)
     }
 }
 

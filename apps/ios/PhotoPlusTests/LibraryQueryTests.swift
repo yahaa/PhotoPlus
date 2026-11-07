@@ -91,3 +91,37 @@ final class LibraryQueryTests: XCTestCase {
         XCTAssertEqual(Set(groups.map(\.id)).count, 2)
     }
 }
+
+final class GridLayoutTableTests: XCTestCase {
+    func testMatchesTheMeasuredThreeColumnGrid() {
+        // Measured from LazyVGrid at 402 points: row 20, second column.
+        let table = GridLayoutTable(aspectRatios: Array(repeating: 1, count: 67), columns: 3, width: 402)
+        let frame = table.frame(at: 61)
+        XCTAssertEqual(frame.minX, 134.57, accuracy: 0.01)
+        XCTAssertEqual(frame.minY, 2691.33, accuracy: 0.01)
+        XCTAssertEqual(frame.width, 132.87, accuracy: 0.01)
+    }
+
+    func testFindsTheRowAtAHeight() {
+        let table = GridLayoutTable(aspectRatios: Array(repeating: 1, count: 10), columns: 3, width: 300)
+        XCTAssertEqual(table.index(atY: -50), 0)
+        XCTAssertEqual(table.index(atY: 0), 0)
+        XCTAssertEqual(table.index(atY: table.frame(at: 3).minY + 1), 3)
+        XCTAssertEqual(table.index(atY: 100_000), 9, "past the end it stays on the last row")
+    }
+
+    func testSingleColumnUsesEachPhotosOwnHeight() {
+        let table = GridLayoutTable(aspectRatios: [2, 0.5, 1], columns: 1, width: 100, spacing: 2)
+        XCTAssertEqual(table.frame(at: 0).height, 50)
+        XCTAssertEqual(table.frame(at: 1).minY, 52)
+        XCTAssertEqual(table.frame(at: 1).height, 200)
+        XCTAssertEqual(table.frame(at: 2).minY, 254)
+        XCTAssertEqual(table.index(atY: 60), 1)
+        XCTAssertEqual(table.index(atY: 300), 2)
+    }
+
+    func testEmptyGridHasNoRows() {
+        XCTAssertNil(GridLayoutTable(aspectRatios: [], columns: 3, width: 300).index(atY: 0))
+        XCTAssertNil(GridLayoutTable(aspectRatios: [], columns: 1, width: 300).index(atY: 0))
+    }
+}

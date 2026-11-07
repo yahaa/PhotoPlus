@@ -319,11 +319,26 @@ struct EmptyAlbumHero: View {
     }
 }
 
+/// Darkens the photos under the Library's title and buttons.
+struct LibraryHeaderGradient: View {
+    var body: some View {
+        LinearGradient(colors: [.black.opacity(0.65), .black.opacity(0.35), .clear], startPoint: .top, endPoint: .bottom)
+            .frame(height: 165)
+            .ignoresSafeArea()
+            .allowsHitTesting(false)
+    }
+}
+
 /// The Library's title and its line of context, white over the darkened photos when there are any under it.
 struct LibraryHeader: View {
     let title: String
-    let subtitle: String
+    let summary: String
+    @ObservedObject var state: GridHeaderState
     let isOnPhotos: Bool
+
+    private var subtitle: String {
+        state.isAtNewest ? summary : state.visibleDay ?? summary
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {

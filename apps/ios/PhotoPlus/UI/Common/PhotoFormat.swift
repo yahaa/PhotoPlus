@@ -9,8 +9,16 @@ enum PhotoFormat {
         date.formatted(.dateTime.year().month(.wide).locale(Locale(identifier: "zh_CN")))
     }
 
+    /// Reused because every grid cell's accessibility label needs one, and building a formatter each time is slow.
+    private static let dayFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.dateFormat = "y年M月d日"
+        return formatter
+    }()
+
     static func day(_ date: Date) -> String {
-        date.formatted(.dateTime.year().month(.wide).day().locale(Locale(identifier: "zh_CN")))
+        dayFormatter.string(from: date)
     }
 
     /// "2025年7月8日 星期二 16:00", the first line of the info panel.

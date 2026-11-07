@@ -78,29 +78,63 @@ enum ThumbnailMemory {
 }
 
 enum ImageLoader {
+    private static let requests = DispatchQueue(label: "com.yahaa.photoplus.image-requests", qos: .userInitiated)
+
     /// Yields a fast degraded image first when PhotoKit has one, then the final image.
+    /// The asset lookup is a database fetch, so it runs off the main thread: a scroll starts dozens of these.
     static func localImages(assetID: String, pixels: CGFloat, mode: PHImageContentMode, allowNetwork: Bool) -> AsyncStream<UIImage> {
         AsyncStream { continuation in
-            guard let asset = PhotoKitStore.shared.asset(id: assetID) else {
-                continuation.finish()
-                return
-            }
-            let options = PHImageRequestOptions()
-            options.deliveryMode = .opportunistic
-            options.isNetworkAccessAllowed = allowNetwork
-            options.resizeMode = .fast
             let manager = PhotoKitStore.shared.imageManager
-            let requestID = manager.requestImage(
-                for: asset,
-                targetSize: CGSize(width: pixels, height: pixels),
-                contentMode: mode,
-                options: options
-            ) { image, info in
-                if let image { continuation.yield(image) }
-                let isDegraded = info?[PHImageResultIsDegradedKey] as? Bool ?? false
-                if !isDegraded { continuation.finish() }
+            let request = PendingImageRequest()
+            requests.async {
+                guard !request.isCancelled, let asset = PhotoKitStore.shared.asset(id: assetID) else {
+                    continuation.finish()
+                    return
+                }
+                let options = PHImageRequestOptions()
+                options.deliveryMode = .opportunistic
+                options.isNetworkAccessAllowed = allowNetwork
+                options.resizeMode = .fast
+                let requestID = manager.requestImage(
+                    for: asset,
+                    targetSize: CGSize(width: pixels, height: pixels),
+                    contentMode: mode,
+                    options: options
+                ) { image, info in
+                    if let image { continuation.yield(image) }
+                    let isDegraded = info?[PHImageResultIsDegradedKey] as? Bool ?? false
+                    if !isDegraded { continuation.finish() }
+                }
+                request.started(requestID, manager: manager)
             }
-            continuation.onTermination = { _ in manager.cancelImageRequest(requestID) }
+            continuation.onTermination = { _ in request.cancel(manager: manager) }
         }
+    }
+}
+
+/// Cancellation can arrive before the request has started, or while it's starting on another thread.
+private final class PendingImageRequest: @unchecked Sendable {
+    private let lock = NSLock()
+    private var requestID: PHImageRequestID?
+    private var cancelled = false
+
+    var isCancelled: Bool {
+        lock.withLock { cancelled }
+    }
+
+    func started(_ id: PHImageRequestID, manager: PHImageManager) {
+        let cancelNow = lock.withLock {
+            requestID = id
+            return cancelled
+        }
+        if cancelNow { manager.cancelImageRequest(id) }
+    }
+
+    func cancel(manager: PHImageManager) {
+        let id = lock.withLock {
+            cancelled = true
+            return requestID
+        }
+        if let id { manager.cancelImageRequest(id) }
     }
 }

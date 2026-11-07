@@ -1,24 +1,83 @@
 import SwiftUI
 
 private struct ScrollFacts: Equatable {
+    let offset: CGPoint
+    let width: CGFloat
+    let height: CGFloat
     let atNewest: Bool
     let fills: Bool
+
+    init(_ geometry: ScrollGeometry) {
+        offset = geometry.contentOffset
+        width = geometry.containerSize.width
+        height = geometry.containerSize.height
+        atNewest = geometry.visibleRect.maxY >= geometry.contentSize.height - 24
+        fills = geometry.contentSize.height + geometry.contentInsets.top + geometry.contentInsets.bottom > geometry.containerSize.height
+    }
 }
 
-/// Scroll facts that change too often to live in view state; re-rendering the grid on each would stutter.
+/// Scroll facts that change on every frame. They stay out of view state, because re-rendering the grid
+/// on each is what made scrolling feel heavy on a phone.
+@MainActor
 private final class GridScrollTracker {
-    var visibleIDs: [String] = []
-    var dates: [String: Date] = [:]
-    /// Cells in content coordinates, which scrolling doesn't change; `screenFrame` applies the scroll.
-    var frames: [String: CGRect] = [:]
-    var scrollOrigin = CGPoint.zero
+    private var items: [PhotoItem] = []
+    private var indexByID: [String: Int] = [:]
+    private var table: GridLayoutTable?
+    private var columns = 3
+    private var topRowIndex: Int?
+    var offset = CGPoint.zero
+    var viewportSize = CGSize.zero
     var viewportOrigin = CGPoint.zero
+    /// Where the cells start inside the scrolling content, which is below an album's heading.
+    var gridOrigin = CGPoint.zero
 
-    /// Where a cell is on screen right now, for the viewer's flight.
-    func screenFrame(of id: String) -> CGRect? {
-        guard visibleIDs.contains(id), let frame = frames[id] else { return nil }
-        return frame.offsetBy(dx: viewportOrigin.x - scrollOrigin.x, dy: viewportOrigin.y - scrollOrigin.y)
+    func update(items: [PhotoItem], columns: Int) {
+        self.items = items
+        self.columns = columns
+        indexByID = Dictionary(items.enumerated().map { ($1.id, $0) }, uniquingKeysWith: { first, _ in first })
+        topRowIndex = nil
+        rebuildTable()
     }
+
+    func update(width: CGFloat) {
+        guard width != viewportSize.width else { return }
+        viewportSize.width = width
+        rebuildTable()
+    }
+
+    private func rebuildTable() {
+        guard viewportSize.width > 0 else { return }
+        let ratios = columns == 1 ? items.map(\.aspectRatio) : Array(repeating: 1, count: items.count)
+        table = GridLayoutTable(aspectRatios: ratios, columns: columns, width: viewportSize.width)
+    }
+
+    /// The photo at the top of the viewport, when that has changed since the last call.
+    func newTopItem() -> PhotoItem? {
+        guard let index = table?.index(atY: offset.y - gridOrigin.y), index != topRowIndex, items.indices.contains(index) else { return nil }
+        topRowIndex = index
+        return items[index]
+    }
+
+    func middleItemID() -> String? {
+        guard let index = table?.index(atY: offset.y - gridOrigin.y + viewportSize.height / 2), items.indices.contains(index) else { return nil }
+        return items[index].id
+    }
+
+    /// Where a cell is on screen right now, for the viewer's flight; nil if it's out of view.
+    func screenFrame(of id: String) -> CGRect? {
+        guard let index = indexByID[id], let table else { return nil }
+        let frame = table.frame(at: index)
+            .offsetBy(dx: gridOrigin.x - offset.x + viewportOrigin.x, dy: gridOrigin.y - offset.y + viewportOrigin.y)
+        let viewport = CGRect(origin: viewportOrigin, size: viewportSize)
+        return frame.intersects(viewport) ? frame : nil
+    }
+}
+
+/// The header's changing line. Only the header observes it, so a new date doesn't redraw the grid.
+@MainActor
+final class GridHeaderState: ObservableObject {
+    @Published var visibleDay: String?
+    @Published var isAtNewest = true
 }
 
 /// The edge-to-edge grid behind the Library, albums and search results. It opens at the newest photo.
@@ -49,8 +108,7 @@ struct PhotoGridView: View {
     @State private var viewerStart: PhotoItem?
     @State private var viewerCurrentID: String?
     @State private var tracker = GridScrollTracker()
-    @State private var visibleDay: String?
-    @State private var isAtNewest = true
+    @StateObject private var header = GridHeaderState()
     @State private var fillsScreen = false
     @State private var isSearching = false
     @State private var query = ""
@@ -65,6 +123,8 @@ struct PhotoGridView: View {
     }
 
     private static let contentSpace = "grid-content"
+    /// What the cell positions depend on.
+    private var layoutKey: [AnyHashable] { [items.map(\.id), density] }
     private var isLibrary: Bool { style == .library }
     /// The Library's title and buttons sit on darkened photos.
     private var usesDarkChrome: Bool { isLibrary && fillsScreen }
@@ -100,22 +160,16 @@ struct PhotoGridView: View {
                 }
                 .onChange(of: viewerCurrentID) { _, id in
                     // The zoom back needs its cell on screen, and the grid should end up where the viewer did.
-                    guard let id, !tracker.visibleIDs.contains(id) else { return }
+                    guard let id, tracker.screenFrame(of: id) == nil else { return }
                     proxy.scrollTo(id, anchor: .center)
                 }
         }
         .overlay(alignment: .top) {
-            if isLibrary, fillsScreen {
-                LinearGradient(colors: [.black.opacity(0.65), .black.opacity(0.35), .clear], startPoint: .top, endPoint: .bottom)
-                    .frame(height: 165)
-                    .ignoresSafeArea()
-                    .allowsHitTesting(false)
-            }
+            if isLibrary, fillsScreen { LibraryHeaderGradient() }
         }
         .overlay(alignment: .topLeading) {
             if isLibrary {
-                let summary = PhotoFormat.summary(items)
-                LibraryHeader(title: title, subtitle: isAtNewest ? summary : visibleDay ?? summary, isOnPhotos: fillsScreen)
+                LibraryHeader(title: title, summary: PhotoFormat.summary(items), state: header, isOnPhotos: fillsScreen)
             }
         }
         .overlay {
@@ -143,7 +197,7 @@ struct PhotoGridView: View {
                 startID: start.id,
                 currentID: $viewerCurrentID,
                 flightPixels: density.pixelSize,
-                sourceFrame: tracker.screenFrame(of:),
+                sourceFrame: { tracker.screenFrame(of: $0) },
                 onFlyingPhotoChange: { flyingPhotoID = $0 }
             )
         }
@@ -152,8 +206,8 @@ struct PhotoGridView: View {
             selection = []
             isSelecting = false
         })
-        .onChange(of: allItems, initial: true) { _, new in
-            tracker.dates = Dictionary(new.map { ($0.id, $0.takenAt) }, uniquingKeysWith: { first, _ in first })
+        .onChange(of: layoutKey, initial: true) { _, _ in
+            tracker.update(items: items, columns: density.rawValue)
         }
     }
 
@@ -168,13 +222,12 @@ struct PhotoGridView: View {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 1.7), count: density.rawValue), spacing: 1.7) {
                     ForEach(items) { cell($0) }
                 }
-                .scrollTargetLayout()
+                .onGeometryChange(for: CGPoint.self, of: { $0.frame(in: .named(Self.contentSpace)).origin }, action: { tracker.gridOrigin = $0 })
                 if isLibrary { ArchiveStatusLine().padding(.top, 8) }
             }
             .coordinateSpace(name: Self.contentSpace)
         }
         .onGeometryChange(for: CGPoint.self, of: { $0.frame(in: .global).origin }, action: { tracker.viewportOrigin = $0 })
-        .onScrollGeometryChange(for: CGPoint.self, of: \.contentOffset) { _, offset in tracker.scrollOrigin = offset }
         .contentMargins(.top, isLibrary ? 152 : 0, for: .scrollContent)
         .contentMargins(.bottom, style == .results ? 8 : BottomBarMetrics.height, for: .scrollContent)
         .defaultScrollAnchor(.bottom, for: .initialOffset)
@@ -186,23 +239,22 @@ struct PhotoGridView: View {
             onChange: { pinch.track(scale: $0, at: $1, limit: limit(for: $0)) },
             onEnd: { pinched($0, proxy: proxy) }
         ))
-        .onScrollTargetVisibilityChange(idType: String.self, threshold: 0.3) { ids in
-            tracker.visibleIDs = ids
-            let top = ids.first.flatMap { tracker.dates[$0] }
-            if isLibrary { bar.anchorDate = top }
-            let day = top.map(PhotoFormat.day)
-            if day != visibleDay { visibleDay = day }
+        .onScrollGeometryChange(for: ScrollFacts.self, of: ScrollFacts.init) { _, facts in scrolled(facts) }
+    }
+
+    /// Runs on every frame of a scroll, so it mustn't touch anything the grid's body reads, except on rare changes.
+    private func scrolled(_ facts: ScrollFacts) {
+        tracker.offset = facts.offset
+        tracker.viewportSize.height = facts.height
+        tracker.update(width: facts.width)
+        if let top = tracker.newTopItem() {
+            if isLibrary { bar.anchorDate = top.takenAt }
+            let day = PhotoFormat.day(top.takenAt)
+            if day != header.visibleDay { header.visibleDay = day }
         }
-        .onScrollGeometryChange(for: ScrollFacts.self) { geometry in
-            ScrollFacts(
-                atNewest: geometry.visibleRect.maxY >= geometry.contentSize.height - 24,
-                fills: geometry.contentSize.height + geometry.contentInsets.top + geometry.contentInsets.bottom > geometry.containerSize.height
-            )
-        } action: { _, facts in
-            if facts.atNewest != isAtNewest { isAtNewest = facts.atNewest }
-            if facts.fills != fillsScreen { fillsScreen = facts.fills }
-            if isLibrary, isActive { bar.setAwayFromNewest(!facts.atNewest) }
-        }
+        if facts.atNewest != header.isAtNewest { header.isAtNewest = facts.atNewest }
+        if facts.fills != fillsScreen { fillsScreen = facts.fills }
+        if isLibrary, isActive { bar.setAwayFromNewest(!facts.atNewest) }
     }
 
     private func cell(_ item: PhotoItem) -> some View {
@@ -225,7 +277,6 @@ struct PhotoGridView: View {
         }
         .buttonStyle(GridCellButtonStyle())
         .id(item.id)
-        .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .named(Self.contentSpace)) }, action: { tracker.frames[item.id] = $0 })
         .contextMenu {
             PhotoMenuItems(actions: actions, items: [item])
         } preview: {
@@ -237,8 +288,6 @@ struct PhotoGridView: View {
         .accessibilityIdentifier("cell-\(item.storageTag)")
         .accessibilityLabel(PhotoFormat.day(item.takenAt))
     }
-
-    // MARK: Header
 
     // MARK: Bars
 
@@ -294,7 +343,7 @@ struct PhotoGridView: View {
             pinch.settle()
             return
         }
-        let anchor = tracker.visibleIDs.dropFirst(tracker.visibleIDs.count / 2).first
+        let anchor = tracker.middleItemID()
         // Swap at the scale the old grid reached, so the new one takes over without a jump.
         let ratio = CGFloat(density.rawValue) / CGFloat(next.rawValue)
         pinch.rebase(by: ratio)
