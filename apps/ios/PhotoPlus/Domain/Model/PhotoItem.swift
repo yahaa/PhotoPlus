@@ -1,9 +1,77 @@
 import Foundation
 
-/// Timeline item: local cache and/or NAS object.
-struct PhotoItem: Identifiable, Equatable {
+enum MediaKind: Hashable {
+    case image
+    case livePhoto
+    case video
+}
+
+/// Metadata of an asset in the phone's photo library.
+struct LocalAsset: Hashable {
+    let id: String
+    let creationDate: Date
+    let kind: MediaKind
+    let duration: TimeInterval
+    let width: Int
+    let height: Int
+    let isFavorite: Bool
+    let isBurst: Bool
+    var isScreenshot = false
+}
+
+/// A photo committed on the NAS. Mirrors the server's JSON.
+struct RemotePhoto: Codable, Hashable, Identifiable {
     let id: String
     let takenAt: Date
-    let isLocalOriginalPresent: Bool
-    let nasObjectKey: String?
+    let filename: String
+    let contentType: String
+    let sizeBytes: Int64
+    let tier: SafetyTier
+    let width: Int
+    let height: Int
+    let sourceLocalId: String
+    let motionSize: Int64
+    let uploadedAt: Date
+}
+
+/// One timeline entry: on the phone, on the NAS, or both.
+struct PhotoItem: Identifiable, Hashable {
+    enum Storage {
+        case localOnly
+        case both
+        case nasOnly
+    }
+
+    let id: String
+    let takenAt: Date
+    let kind: MediaKind
+    let duration: TimeInterval
+    let width: Int
+    let height: Int
+    let isFavorite: Bool
+    let isBurst: Bool
+    var isScreenshot = false
+    let localAssetID: String?
+    let remote: RemotePhoto?
+
+    var storage: Storage {
+        switch (localAssetID, remote) {
+        case (.some, .some): .both
+        case (.some, .none): .localOnly
+        default: .nasOnly
+        }
+    }
+
+    /// The storage state in a word, for accessibility identifiers.
+    var storageTag: String {
+        switch storage {
+        case .localOnly: "local"
+        case .both: "both"
+        case .nasOnly: "nas"
+        }
+    }
+
+    var aspectRatio: CGFloat {
+        width > 0 && height > 0 ? CGFloat(width) / CGFloat(height) : 1
+    }
 }
