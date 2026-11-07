@@ -90,8 +90,12 @@ struct TimelineCardsView: View {
                             if style == .months {
                                 Text(PhotoFormat.month(group.date)).font(.title3.bold())
                             }
-                            Button { onSelect(group) } label: { card(group) }
-                                .buttonStyle(.plain)
+                            card(group)
+                                .contentShape(Rectangle())
+                                .onTapGesture { onSelect(group) }
+                                .accessibilityElement(children: .combine)
+                                .accessibilityAddTraits(.isButton)
+                                .accessibilityAction { onSelect(group) }
                                 .accessibilityIdentifier(style == .years ? "year-card" : "month-card")
                         }
                         .id(group.id)

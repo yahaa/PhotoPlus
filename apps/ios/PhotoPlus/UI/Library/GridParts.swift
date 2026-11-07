@@ -18,13 +18,6 @@ struct GridEmptyState: View {
     }
 }
 
-/// Photos doesn't dim a cell when it's tapped, unlike SwiftUI's button styles.
-struct GridCellButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-    }
-}
-
 /// Badges drawn over a cell, in the corners Photos uses.
 struct GridCellBadges: View {
     let item: PhotoItem

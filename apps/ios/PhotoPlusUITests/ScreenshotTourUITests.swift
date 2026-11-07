@@ -88,7 +88,9 @@ final class ScreenshotTourUITests: XCTestCase {
         XCTAssertFalse(app.buttons["mode-all"].exists, "the mode picker is hidden at the newest photo")
         XCTAssertFalse(app.staticTexts["grid-footer"].exists)
 
-        app.swipeDown()
+        // Fingers usually rest before moving. A resting finger must still scroll the grid.
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3))
+            .press(forDuration: 0.2, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.7)))
         pause(1.5)
         save("11-away")
         XCTAssertTrue(app.buttons["mode-all"].waitForExistence(timeout: 3), "the bar collapses away from the newest photo")

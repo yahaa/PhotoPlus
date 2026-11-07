@@ -257,36 +257,41 @@ struct PhotoGridView: View {
         if isLibrary, isActive { bar.setAwayFromNewest(!facts.atNewest) }
     }
 
+    /// A tap gesture, not a Button: with a context menu attached, a Button held the touch when a finger
+    /// rested before moving, and the grid wouldn't scroll at all.
     private func cell(_ item: PhotoItem) -> some View {
-        Button {
-            if isSelecting {
-                toggle(item)
-            } else {
-                viewerCurrentID = item.id
-                store.noteViewed(item)
-                // The viewer animates itself in, from this cell; the cover's own slide would carry it up from the bottom.
-                PresentationAnimation.suspend()
-                viewerStart = item
+        ThumbnailView(item: item, pixelSize: density.pixelSize, fits: showsOriginalAspect && density != .single)
+            .aspectRatio(density == .single ? item.aspectRatio : 1, contentMode: .fit)
+            .overlay { GridCellBadges(item: item, isSelected: selection.contains(item.id), isSelecting: isSelecting) }
+            .opacity(flyingPhotoID == item.id ? 0 : 1)
+            .contentShape(Rectangle())
+            .onTapGesture { tapped(item) }
+            .id(item.id)
+            .contextMenu {
+                PhotoMenuItems(actions: actions, items: [item])
+            } preview: {
+                ThumbnailView(item: item, pixelSize: 1000)
+                    .aspectRatio(item.aspectRatio, contentMode: .fit)
+                    .frame(width: 360)
+                    .environmentObject(store.settings)
             }
-        } label: {
-            ThumbnailView(item: item, pixelSize: density.pixelSize, fits: showsOriginalAspect && density != .single)
-                .aspectRatio(density == .single ? item.aspectRatio : 1, contentMode: .fit)
-                .overlay { GridCellBadges(item: item, isSelected: selection.contains(item.id), isSelecting: isSelecting) }
-                .opacity(flyingPhotoID == item.id ? 0 : 1)
-                .contentShape(Rectangle())
+            .accessibilityElement(children: .ignore)
+            .accessibilityAddTraits(.isButton)
+            .accessibilityAction { tapped(item) }
+            .accessibilityIdentifier("cell-\(item.storageTag)")
+            .accessibilityLabel(PhotoFormat.day(item.takenAt))
+    }
+
+    private func tapped(_ item: PhotoItem) {
+        if isSelecting {
+            toggle(item)
+        } else {
+            viewerCurrentID = item.id
+            store.noteViewed(item)
+            // The viewer animates itself in, from this cell; the cover's own slide would carry it up from the bottom.
+            PresentationAnimation.suspend()
+            viewerStart = item
         }
-        .buttonStyle(GridCellButtonStyle())
-        .id(item.id)
-        .contextMenu {
-            PhotoMenuItems(actions: actions, items: [item])
-        } preview: {
-            ThumbnailView(item: item, pixelSize: 1000)
-                .aspectRatio(item.aspectRatio, contentMode: .fit)
-                .frame(width: 360)
-                .environmentObject(store.settings)
-        }
-        .accessibilityIdentifier("cell-\(item.storageTag)")
-        .accessibilityLabel(PhotoFormat.day(item.takenAt))
     }
 
     // MARK: Bars

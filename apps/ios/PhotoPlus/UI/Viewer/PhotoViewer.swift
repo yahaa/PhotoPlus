@@ -91,7 +91,9 @@ struct PhotoViewer: View {
                 let openHeight = pagerOpenHeight(in: geometry.size)
                 let pagerHeight = geometry.size.height + (openHeight - geometry.size.height) * infoProgress
                 VStack(spacing: 0) {
-                    pager(travel: geometry.size.height - openHeight)
+                    // A photo stays centred in the pager, so it moves half as far as the pager's edge.
+                    // Half the travel keeps it under the finger.
+                    pager(travel: (geometry.size.height - openHeight) / 2)
                         .frame(height: pagerHeight)
                     if infoIsOpen, let current {
                         PhotoInfoPanel(item: current, onPullDown: { setInfo(open: false) })
