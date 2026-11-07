@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "1600"
+   LastUpgradeVersion = "1430"
    version = "1.7">
    <BuildAction
       parallelizeBuildables = "YES"
-      buildImplicitDependencies = "YES">
+      buildImplicitDependencies = "YES"
+      runPostActionsOnFailure = "NO">
       <BuildActionEntries>
          <BuildActionEntry
             buildForTesting = "YES"
@@ -14,7 +15,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "372B251FB6CA437EAFD713C8"
+               BlueprintIdentifier = "2794DA3E1EB1A9C86D236DA6"
                BuildableName = "PhotoPlus.app"
                BlueprintName = "PhotoPlus"
                ReferencedContainer = "container:PhotoPlus.xcodeproj">
@@ -27,7 +28,40 @@
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       shouldUseLaunchSchemeArgsEnv = "YES"
-      shouldAutocreateTestPlan = "YES">
+      onlyGenerateCoverageForSpecifiedTargets = "NO">
+      <MacroExpansion>
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "2794DA3E1EB1A9C86D236DA6"
+            BuildableName = "PhotoPlus.app"
+            BlueprintName = "PhotoPlus"
+            ReferencedContainer = "container:PhotoPlus.xcodeproj">
+         </BuildableReference>
+      </MacroExpansion>
+      <Testables>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "849619CCF8596B76AE3A0495"
+               BuildableName = "PhotoPlusTests.xctest"
+               BlueprintName = "PhotoPlusTests"
+               ReferencedContainer = "container:PhotoPlus.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "4FACDEABB4DC70B187511279"
+               BuildableName = "PhotoPlusUITests.xctest"
+               BlueprintName = "PhotoPlusUITests"
+               ReferencedContainer = "container:PhotoPlus.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+      </Testables>
+      <CommandLineArguments>
+      </CommandLineArguments>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"
@@ -43,12 +77,14 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "372B251FB6CA437EAFD713C8"
+            BlueprintIdentifier = "2794DA3E1EB1A9C86D236DA6"
             BuildableName = "PhotoPlus.app"
             BlueprintName = "PhotoPlus"
             ReferencedContainer = "container:PhotoPlus.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
+      <CommandLineArguments>
+      </CommandLineArguments>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
@@ -60,7 +96,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "372B251FB6CA437EAFD713C8"
+            BlueprintIdentifier = "2794DA3E1EB1A9C86D236DA6"
             BuildableName = "PhotoPlus.app"
             BlueprintName = "PhotoPlus"
             ReferencedContainer = "container:PhotoPlus.xcodeproj">

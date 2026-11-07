@@ -1,31 +1,23 @@
 # apps/ios
 
-Swift + SwiftUI client for PhotoPlus (`com.yahaa.photoplus`).
+Swift + SwiftUI client for PhotoPlus (`com.yahaa.photoplus`). Library, Collections and the viewer follow Apple's Photos; Settings is PhotoPlus's own addition.
 
 ## Layout
 
-- `PhotoPlus/UI/` — Timeline, Settings, Devices, upload-queue placeholders
-- `PhotoPlus/Data/` — `ApiClient` (NAS Go API) and `PhotoKitStore` stubs
-- `PhotoPlus/Domain/` — models + repository stubs
-- `PhotoPlus.xcodeproj` — hand-written Xcode project (open this)
-- `project.yml` — optional [XcodeGen](https://github.com/yonaskolb/XcodeGen) recipe if you need to regenerate the project
+- `PhotoPlus/UI/` — Library (Years / Months / All), Viewer, Collections, Settings
+- `PhotoPlus/Domain/` — models, timeline merging, archive rules
+- `PhotoPlus/Data/` — NAS `ApiClient`, PhotoKit access, caches, settings
+- `PhotoPlus/Archive/` — the foreground rolling archive
+- `PhotoPlus/Data/Debug/` — Debug-only generated fixtures for tests
+- `project.yml` — source of truth for the Xcode project (`xcodegen generate` after adding or removing files)
 
-## Open / build
+## Build and run
 
-1. On a Mac with Xcode 16+ (iOS 17 SDK).
-2. Open `PhotoPlus.xcodeproj` (File → Open).
-3. Select an iPhone simulator or device; set your Development Team for signing.
-4. Product → Run.
+On a Mac with Xcode 26: open `PhotoPlus.xcodeproj`, select a simulator or device, set your Development Team, and run. Then enter the NAS address and token under Settings. See the root `CLAUDE.md` for command-line builds and tests.
 
-CLI (Mac only):
+## Current limits
 
-```bash
-xcodebuild -project PhotoPlus.xcodeproj -scheme PhotoPlus -destination 'platform=iOS Simulator,name=iPhone 16' build
-```
-
-This Linux box cannot build iOS; the project is meant to open and build under Xcode.
-
-## Notes
-
-- `NSPhotoLibraryUsageDescription` is set for PhotoKit / rolling archive.
-- Pair with `apps/android` (Kotlin Compose) — dual native codebases for Photos/MediaStore depth.
+- Uploads run only while the app is in the foreground.
+- Videos, bursts and edited photos are not archived and stay on the phone.
+- Live Photos are archived with their motion, but play back only while on the phone.
+- There is no search tab yet.
